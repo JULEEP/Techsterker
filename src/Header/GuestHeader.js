@@ -18,6 +18,7 @@ const GuestHeader = ({ onLogin }) => {
     userId: '',
     generatedPassword: ''
   });
+  const [loginType, setLoginType] = useState(null);
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('Certified Programs');
@@ -1086,28 +1087,7 @@ const GuestHeader = ({ onLogin }) => {
                       : "p-6 w-full max-w-[480px]"
               } shadow-2xl`}
           >
-            <div
-              className={`flex justify-center ${screenSize === "mobile-small" ? "mb-3" : "mb-4 sm:mb-5"
-                }`}
-            >
-              <img
-                src="/logo/hicaplogo.png"
-                alt="Logo"
-                className={`${screenSize === "mobile-small"
-                  ? "w-14"
-                  : screenSize === "mobile"
-                    ? "w-16"
-                    : screenSize === "mobile-large"
-                      ? "w-18 sm:w-20"
-                      : screenSize === "tablet"
-                        ? "w-22 md:w-24"
-                        : screenSize === "laptop"
-                          ? "w-24 lg:w-26"
-                          : "w-26 lg:w-28"
-                  } h-auto object-contain`}
-              />
-            </div>
-
+            {/* Header */}
             <div
               className={`flex justify-between items-center ${screenSize === "mobile-small" ? "mb-4" : "mb-4 sm:mb-5 md:mb-6"
                 }`}
@@ -1127,7 +1107,10 @@ const GuestHeader = ({ onLogin }) => {
                 Login
               </h4>
               <button
-                onClick={() => setShowLoginModal(false)}
+                onClick={() => {
+                  setShowLoginModal(false);
+                  setLoginType(null);
+                }}
                 className={`bg-transparent border-none ${screenSize === "mobile-small"
                   ? "text-lg"
                   : screenSize === "mobile"
@@ -1139,129 +1122,226 @@ const GuestHeader = ({ onLogin }) => {
               </button>
             </div>
 
-            <form onSubmit={handleLoginSubmit}>
-              {loginError && (
+            {/* ------------------------ LOGIN TYPE SELECTION ------------------------ */}
+            {loginType === null && (
+              <div className="p-4">
+
+                {/* Logo (same style as login form) */}
                 <div
-                  className={`${screenSize === "mobile-small" ? "p-2" : "p-2 sm:p-2.5"
-                    } bg-[#f8d7da] text-[#721c24] rounded ${screenSize === "mobile-small" ? "mb-3" : "mb-3 sm:mb-4"
-                    } ${screenSize === "mobile-small" ? "text-xs" : "text-xs sm:text-sm"
+                  className={`flex justify-center ${screenSize === "mobile-small" ? "mb-3" : "mb-4 sm:mb-5"
                     }`}
                 >
-                  {loginError}
-                </div>
-              )}
-
-              {/* Email */}
-              <div
-                className={`${screenSize === "mobile-small" ? "mb-3" : "mb-3 sm:mb-4 md:mb-5"
-                  }`}
-              >
-                <div className="relative">
-                  <FaPhone
-                    className={`absolute ${screenSize === "mobile-small" ? "left-3" : "left-3 sm:left-4"
-                      } top-1/2 -translate-y-1/2 text-gray-600 ${screenSize === "mobile-small"
-                        ? "text-sm"
+                  <img
+                    src="/logo/hicaplogo.png"
+                    alt="Logo"
+                    className={`${screenSize === "mobile-small"
+                        ? "w-14"
                         : screenSize === "mobile"
-                          ? "text-base"
-                          : "text-base sm:text-lg md:text-xl"
-                      }`}
+                          ? "w-16"
+                          : screenSize === "mobile-large"
+                            ? "w-18 sm:w-20"
+                            : screenSize === "tablet"
+                              ? "w-22 md:w-24"
+                              : screenSize === "laptop"
+                                ? "w-24 lg:w-26"
+                                : "w-26 lg:w-28"
+                      } h-auto object-contain`}
                   />
-                  <input
-                    type="text"
-                    name="userId"
-                    value={loginData.userId}
-                    onChange={(e) => setLoginData({ ...loginData, userId: e.target.value })}
-                    placeholder="User ID"
-                    required
-                    className={`w-full ${screenSize === "mobile-small"
-                      ? "py-2 pl-9 pr-3"
+                </div>
+
+                <h2 className="text-lg font-semibold text-[#a51d34] text-center mb-4">
+                  Select Login Type
+                </h2>
+
+                {/* 2 Column Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                  {/* Student Login */}
+                  <button
+                    className="w-full py-2 bg-[#a51d34] text-white rounded-md font-semibold hover:bg-[#8e182c] transition"
+                    onClick={() => setLoginType("student")}
+                  >
+                    Student Login
+                  </button>
+
+                  {/* Institute Login */}
+                  <button
+                    className="w-full py-2 border border-[#a51d34] text-[#a51d34] rounded-md font-semibold hover:bg-[#a51d34] hover:text-white transition"
+                    onClick={() => window.open("https://www.techsterker.com", "_blank")}
+                  >
+                    Institute Login
+                  </button>
+
+                </div>
+              </div>
+            )}
+
+
+            {/* -------------------------- STUDENT LOGIN FORM -------------------------- */}
+            {loginType === "student" && (
+              <>
+                {/* Logo */}
+                <div
+                  className={`flex justify-center ${screenSize === "mobile-small" ? "mb-3" : "mb-4 sm:mb-5"
+                    }`}
+                >
+                  <img
+                    src="/logo/hicaplogo.png"
+                    alt="Logo"
+                    className={`${screenSize === "mobile-small"
+                      ? "w-14"
                       : screenSize === "mobile"
-                        ? "py-2 pl-10 pr-3"
-                        : "py-2 sm:py-2.5 md:py-3 pl-10 sm:pl-12 md:pl-12 pr-3"
-                      } border border-gray-300 rounded-md ${screenSize === "mobile-small"
+                        ? "w-16"
+                        : screenSize === "mobile-large"
+                          ? "w-18 sm:w-20"
+                          : screenSize === "tablet"
+                            ? "w-22 md:w-24"
+                            : screenSize === "laptop"
+                              ? "w-24 lg:w-26"
+                              : "w-26 lg:w-28"
+                      } h-auto object-contain`}
+                  />
+                </div>
+
+                <form onSubmit={handleLoginSubmit}>
+                  {loginError && (
+                    <div
+                      className={`${screenSize === "mobile-small" ? "p-2" : "p-2 sm:p-2.5"
+                        } bg-[#f8d7da] text-[#721c24] rounded ${screenSize === "mobile-small" ? "mb-3" : "mb-3 sm:mb-4"
+                        } ${screenSize === "mobile-small"
+                          ? "text-xs"
+                          : "text-xs sm:text-sm"
+                        }`}
+                    >
+                      {loginError}
+                    </div>
+                  )}
+
+                  {/* User ID */}
+                  <div
+                    className={`${screenSize === "mobile-small" ? "mb-3" : "mb-3 sm:mb-4 md:mb-5"
+                      }`}
+                  >
+                    <div className="relative">
+                      <FaPhone
+                        className={`absolute ${screenSize === "mobile-small"
+                          ? "left-3"
+                          : "left-3 sm:left-4"
+                          } top-1/2 -translate-y-1/2 text-gray-600 ${screenSize === "mobile-small"
+                            ? "text-sm"
+                            : screenSize === "mobile"
+                              ? "text-base"
+                              : "text-base sm:text-lg md:text-xl"
+                          }`}
+                      />
+                      <input
+                        type="text"
+                        name="userId"
+                        value={loginData.userId}
+                        onChange={(e) =>
+                          setLoginData({ ...loginData, userId: e.target.value })
+                        }
+                        placeholder="User ID"
+                        required
+                        className={`w-full ${screenSize === "mobile-small"
+                          ? "py-2 pl-9 pr-3"
+                          : screenSize === "mobile"
+                            ? "py-2 pl-10 pr-3"
+                            : "py-2 sm:py-2.5 md:py-3 pl-10 sm:pl-12 md:pl-12 pr-3"
+                          } border border-gray-300 rounded-md ${screenSize === "mobile-small"
+                            ? "text-sm"
+                            : screenSize === "mobile"
+                              ? "text-sm"
+                              : "text-sm sm:text-base md:text-lg"
+                          } focus:border-[#a51d34] focus:outline-none focus:ring-1 focus:ring-[#a51d34] transition-colors`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password */}
+                  <div
+                    className={`${screenSize === "mobile-small" ? "mb-3" : "mb-3 sm:mb-4 md:mb-5"
+                      }`}
+                  >
+                    <div className="relative">
+                      <FaLock
+                        className={`absolute ${screenSize === "mobile-small"
+                          ? "left-3"
+                          : "left-3 sm:left-4"
+                          } top-1/2 -translate-y-1/2 text-gray-600 ${screenSize === "mobile-small"
+                            ? "text-sm"
+                            : screenSize === "mobile"
+                              ? "text-base"
+                              : "text-base sm:text-lg md:text-xl"
+                          }`}
+                      />
+                      <input
+                        type="password"
+                        name="generatedPassword"
+                        value={loginData.generatedPassword}
+                        onChange={(e) =>
+                          setLoginData({
+                            ...loginData,
+                            generatedPassword: e.target.value,
+                          })
+                        }
+                        placeholder="Generated Password"
+                        required
+                        className={`w-full ${screenSize === "mobile-small"
+                          ? "py-2 pl-9 pr-3"
+                          : screenSize === "mobile"
+                            ? "py-2 pl-10 pr-3"
+                            : "py-2 sm:py-2.5 md:py-3 pl-10 sm:pl-12 md:pl-12 pr-3"
+                          } border border-gray-300 rounded-md ${screenSize === "mobile-small"
+                            ? "text-sm"
+                            : screenSize === "mobile"
+                              ? "text-sm"
+                              : "text-sm sm:text-base md:text-lg"
+                          } focus:border-[#a51d34] focus:outline-none focus:ring-1 focus:ring-[#a51d34] transition-colors`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit login */}
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className={`w-full ${screenSize === "mobile-small"
+                      ? "py-2"
+                      : screenSize === "mobile"
+                        ? "py-2.5"
+                        : "py-2 sm:py-2.5 md:py-3"
+                      } bg-gradient-to-br from-[#a51d34] to-[#d32f2f] text-white rounded-md font-semibold ${screenSize === "mobile-small"
                         ? "text-sm"
                         : screenSize === "mobile"
                           ? "text-sm"
                           : "text-sm sm:text-base md:text-lg"
-                      } focus:border-[#a51d34] focus:outline-none focus:ring-1 focus:ring-[#a51d34] transition-colors`}
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div
-                className={`${screenSize === "mobile-small" ? "mb-3" : "mb-3 sm:mb-4 md:mb-5"
-                  }`}
-              >
-                <div className="relative">
-                  <FaLock
-                    className={`absolute ${screenSize === "mobile-small" ? "left-3" : "left-3 sm:left-4"
-                      } top-1/2 -translate-y-1/2 text-gray-600 ${screenSize === "mobile-small"
-                        ? "text-sm"
-                        : screenSize === "mobile"
-                          ? "text-base"
-                          : "text-base sm:text-lg md:text-xl"
+                      } cursor-pointer hover:opacity-90 transition-opacity ${isLoggingIn ? "opacity-80" : ""
                       }`}
-                  />
-                  <input
-                    type="password"
-                    name="generatedPassword"
-                    value={loginData.generatedPassword}
-                    onChange={(e) => setLoginData({ ...loginData, generatedPassword: e.target.value })}
-                    placeholder="Generated Password"
-                    required
-                    className={`w-full ${screenSize === "mobile-small"
-                      ? "py-2 pl-9 pr-3"
-                      : screenSize === "mobile"
-                        ? "py-2 pl-10 pr-3"
-                        : "py-2 sm:py-2.5 md:py-3 pl-10 sm:pl-12 md:pl-12 pr-3"
-                      } border border-gray-300 rounded-md ${screenSize === "mobile-small"
-                        ? "text-sm"
-                        : screenSize === "mobile"
-                          ? "text-sm"
-                          : "text-sm sm:text-base md:text-lg"
-                      } focus:border-[#a51d34] focus:outline-none focus:ring-1 focus:ring-[#a51d34] transition-colors`}
-                  />
-                </div>
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={isLoggingIn}
-                className={`w-full ${screenSize === "mobile-small"
-                  ? "py-2"
-                  : screenSize === "mobile"
-                    ? "py-2.5"
-                    : "py-2 sm:py-2.5 md:py-3"
-                  } bg-gradient-to-br from-[#a51d34] to-[#d32f2f] text-white rounded-md font-semibold ${screenSize === "mobile-small"
-                    ? "text-sm"
-                    : screenSize === "mobile"
-                      ? "text-sm"
-                      : "text-sm sm:text-base md:text-lg"
-                  } cursor-pointer hover:opacity-90 transition-opacity ${isLoggingIn ? "opacity-80" : ""
-                  }`}
-              >
-                {isLoggingIn ? (
-                  <>
-                    <span
-                      className={`inline-block ${screenSize === "mobile-small"
-                        ? "w-3 h-3"
-                        : screenSize === "mobile"
-                          ? "w-3 h-3"
-                          : "w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5"
-                        } border-2 border-white/30 rounded-full border-t-white animate-spin mr-2`}
-                    ></span>
-                    Logging in...
-                  </>
-                ) : (
-                  "Login"
-                )}
-              </button>
-            </form>
+                  >
+                    {isLoggingIn ? (
+                      <>
+                        <span
+                          className={`inline-block ${screenSize === "mobile-small"
+                            ? "w-3 h-3"
+                            : screenSize === "mobile"
+                              ? "w-3 h-3"
+                              : "w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5"
+                            } border-2 border-white/30 rounded-full border-t-white animate-spin mr-2`}
+                        ></span>
+                        Logging in...
+                      </>
+                    ) : (
+                      "Login"
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
+
 
 
       <ContactUsModal

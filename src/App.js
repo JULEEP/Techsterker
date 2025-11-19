@@ -45,6 +45,7 @@ import ChatSlack from "./ChatModule/ChatModule";
 import Chat from "./ChatModule/ChatModule";
 import StudentChats from "./ChatModule/ChatModule";
 import BlogDetails from "./Pages/BlogDetails";
+import ScrollToTop from "./newone/ScrollToTop";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -118,6 +119,7 @@ function App() {
 
   return (
     <>
+    <ScrollToTop/>
       <CookieAcceptance />
       <Routes>
         {/* Public Routes */}

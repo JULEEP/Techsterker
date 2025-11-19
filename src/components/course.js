@@ -3,6 +3,8 @@ import { FaRegClock, FaCode, FaStar, FaUserGraduate, FaBook } from 'react-icons/
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import CourseEnquiryModal from './EnrollModal';
+import DownloadSyllabusModal from '../models/DownloadSyllabusModal';
+import { FiDownload, FiEye } from 'react-icons/fi';
 
 const Course = () => {
     const navigate = useNavigate();
@@ -10,6 +12,8 @@ const Course = () => {
     const [loading, setLoading] = useState(true);
     const [showEnquiryModal, setShowEnquiryModal] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState(null);
+    const [showSyllabusModal, setShowSyllabusModal] = useState(false); // State for syllabus modal
+    const [id, setId] = useState(null); // State to hold course ID for syllabus download
 
     const fetchCourses = async () => {
         try {
@@ -31,6 +35,11 @@ const Course = () => {
     const handleEnrollClick = (course) => {
         setSelectedCourse(course);
         setShowEnquiryModal(true);
+    };
+
+    const handleDownloadSyllabus = (id) => {
+        setId(id);
+        setShowSyllabusModal(true);
     };
 
     if (loading) {
@@ -89,20 +98,36 @@ const Course = () => {
                                     </div>
 
                                 </div>
-                                <div className="flex justify-between items-center space-x-4 flex-wrap">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-center">
+
                                     <button
-                                        className="flex-1 py-2 px-2 rounded-md border border-red-300 font-medium hover:bg-gray-200 transition-colors mb-2 sm:mb-0"
+                                        className="py-2 px-3 rounded-md border border-red-300 font-medium hover:bg-gray-200 transition-colors btn-outline-meroon flex items-center justify-center gap-2"
                                         onClick={() => navigate(`/course/${_id}`)}
                                     >
+                                        <FiEye size={18} />
                                         View Details
                                     </button>
+
                                     <button
-                                        className="flex-1 py-2 px-2 rounded-md text-white font-medium bg-red-700 hover:bg-red-800 transition-colors"
-                                        onClick={() => handleEnrollClick({title: name, _id})}
+                                        className="py-2 px-3 rounded-md border border-red-300 font-medium hover:bg-gray-200 transition-colors btn-outline-meroon flex items-center justify-center gap-2"
+                                        onClick={() => handleDownloadSyllabus(_id)}
                                     >
-                                        Enroll Now
+                                        <FiDownload size={18} />
+                                        Download Syllabus
                                     </button>
+
+                                    <div className="sm:col-span-2 flex justify-center">
+                                        <button
+                                            className="w-50 sm:w-auto py-2 px-3 rounded-md text-white font-medium bg-red-700 hover:bg-red-800 transition-colors"
+                                            onClick={() => handleEnrollClick({ title: name, _id })}
+                                        >
+                                            Enroll Now
+                                        </button>
+                                    </div>
+
                                 </div>
+
+
                             </div>
                         ))}
                     </div>
@@ -124,6 +149,12 @@ const Course = () => {
                 show={showEnquiryModal}
                 handleClose={() => setShowEnquiryModal(false)}
                 prefillCourse={selectedCourse?.title}
+            />
+
+            <DownloadSyllabusModal
+                show={showSyllabusModal}
+                courseId={id}
+                handleClose={() => setShowSyllabusModal(false)}
             />
         </section>
     );

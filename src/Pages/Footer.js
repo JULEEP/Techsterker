@@ -274,26 +274,14 @@ const Footer = () => {
           <div className="col-12">
             <div className="text-center">
               <div className="d-flex flex-wrap justify-content-center gap-3">
-                {socialLinks.twitter && (
+                {socialLinks.linkedin && (
                   <a
-                    href={socialLinks.twitter}
+                    href={socialLinks.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="social-icon"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" fill="currentColor" className="bi bi-twitter-x" viewBox="0 0 16 16">
-                      <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
-                    </svg>
-                  </a>
-                )}
-                {socialLinks.facebook && (
-                  <a
-                    href={socialLinks.facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="social-icon"
-                  >
-                    <FaFacebookF size={18} />
+                    <FaLinkedinIn size={18} />
                   </a>
                 )}
                 {socialLinks.instagram && (
@@ -306,16 +294,42 @@ const Footer = () => {
                     <FaInstagram size={18} />
                   </a>
                 )}
-                {socialLinks.linkedin && (
+                {socialLinks.facebook && (
                   <a
-                    href={socialLinks.linkedin}
+                    href={socialLinks.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="social-icon"
                   >
-                    <FaLinkedinIn size={18} />
+                    <FaFacebookF size={18} />
                   </a>
                 )}
+                {socialLinks.twitter && (
+                  <a
+                    href={socialLinks.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="social-icon"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" fill="currentColor" className="bi bi-twitter-x" viewBox="0 0 16 16">
+                      <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
+                    </svg>
+                  </a>
+                )}
+                <a
+                  onClick={() => navigate("/blog")}
+                  className="social-icon cursor-pointer"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    fill="currentColor"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="M2 2h12v2H2V2zm0 4h12v8H2V6zm2 2v4h8V8H4z" />
+                  </svg>
+                </a>
+
               </div>
             </div>
           </div>
