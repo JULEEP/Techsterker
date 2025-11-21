@@ -2,8 +2,6 @@
 import React from "react";
 
 const WebsiteCertificate = () => {
-  const qrCodeImage = "/home/certificateqr.png"; // QR CODE PATH
-
   return (
     <div
       style={{
@@ -32,7 +30,7 @@ const WebsiteCertificate = () => {
           background: "#faf7ef",
           borderRadius: "10px",
           padding: "12px",
-          border: "5px solid #b8860b",
+          border: "5px solid #7A0A1A",
         }}
       >
         {/* INNER FRAME */}
@@ -41,7 +39,7 @@ const WebsiteCertificate = () => {
             background: "#fff",
             borderRadius: "8px",
             padding: "20px",
-            border: "2px solid #d4af37",
+            border: "2px solid #7A0A1A",
           }}
         >
           {/* TITLE */}
@@ -51,11 +49,11 @@ const WebsiteCertificate = () => {
               fontSize: "26px",
               fontWeight: "700",
               textAlign: "center",
-              color: "#7A0A1A",
+              color: "#000",
               marginBottom: "10px",
             }}
           >
-            Certificate of Registration
+            Information Security Compliance Certification
           </h1>
 
           {/* SUBTITLE */}
@@ -63,23 +61,23 @@ const WebsiteCertificate = () => {
             style={{
               textAlign: "center",
               fontFamily: "Georgia, serif",
-              fontSize: "14px",
+              fontSize: "10px",
               color: "#555",
               marginBottom: "25px",
               padding: "0px 5px",
             }}
           >
-            This certificate confirms the registration and certification of the
-            organization listed below.
+            HICAP EDTECH PRIVATE LIMITED has been found in compliance with the requirements of the Information Security Management System (ISMS) ISO/IEC 27001:2022.
           </p>
 
           {/* COMPANY NAME */}
           <h2
+            className="fw-bold"
             style={{
               fontFamily: "'Times New Roman', serif",
               fontSize: "20px",
               textAlign: "center",
-              color: "#7A0A1A",
+              color: "#000",
               marginBottom: "20px",
             }}
           >
@@ -93,65 +91,17 @@ const WebsiteCertificate = () => {
               fontSize: "15px",
               color: "#333",
               lineHeight: "1.6",
+              textAlign: "center",
             }}
           >
             <p>
-              <strong style={{ color: "#7A0A1A" }}>Certificate Code:</strong>{" "}
-              QCC/94AF/1125
+              <span style={{ color: "#7A0A1A" }}>Certificate Code:</span>{" "}
+              <span className="fw-bold text-black">QCC/94AF/1125</span>
             </p>
 
             <p>
-              <strong style={{ color: "#7A0A1A" }}>Issued On:</strong> 03
-              November 2025
-            </p>
-
-            <p style={{ marginTop: "10px" }}>
-              <strong style={{ color: "#7A0A1A" }}>Verification Link:</strong>{" "}
-              <a
-                href="https://qccertification.com/Client.aspx"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#7A0A1A",
-                  textDecoration: "underline",
-                  fontWeight: "600",
-                }}
-              >
-                https://qccertification.com/Client.aspx
-              </a>
-            </p>
-          </div>
-
-          {/* QR CODE */}
-          <div
-            style={{
-              marginTop: "30px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <img
-              src={qrCodeImage}
-              alt="QR Code"
-              style={{
-                height: "120px",
-                width: "120px",
-                objectFit: "contain",
-                border: "3px solid #d4af37",
-                padding: "6px",
-                borderRadius: "8px",
-              }}
-            />
-            <p
-              style={{
-                marginTop: "8px",
-                fontFamily: "Georgia, serif",
-                fontSize: "13px",
-                color: "#7A0A1A",
-              }}
-            >
-              Scan to Verify Certificate
+              <span style={{ color: "#7A0A1A" }}>Issued On:</span>{" "}
+              <span className="fw-bold text-black">03 November 2025</span>
             </p>
           </div>
         </div>
@@ -164,7 +114,6 @@ const WebsiteCertificate = () => {
             h1 { font-size: 22px !important; }
             h2 { font-size: 18px !important; }
             p, span { font-size: 13px !important; }
-            img { height: 100px !important; width: 100px !important; }
           }
         `}
       </style>
