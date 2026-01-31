@@ -4,7 +4,9 @@ import {
   FiCode, FiLayers, FiDatabase, FiPlay, FiClock,
   FiCalendar, FiSearch, FiUser, FiDownload, FiFileText,
   FiVideo, FiImage, FiMusic, FiBox, FiLoader, FiEye,
-  FiVideoOff, FiAward, FiBarChart2, FiCheckCircle
+  FiVideoOff, FiAward, FiBarChart2, FiCheckCircle,
+  FiArrowLeft, FiSend, FiAlertCircle, FiStar, FiFile, 
+  FiInfo, FiExternalLink, FiCast, FiRadio, FiVideo as FiLiveVideo
 } from 'react-icons/fi';
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -14,9 +16,7 @@ const CourseModuleInterface = () => {
   const [selectedClass, setSelectedClass] = useState(null);
   const [expandedModules, setExpandedModules] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('content');
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [notes, setNotes] = useState('');
   const [coursesData, setCoursesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,101 +24,27 @@ const CourseModuleInterface = () => {
   const [currentPdf, setCurrentPdf] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [activeSection, setActiveSection] = useState('recorded');
+  
+  // Quiz States
+  const [quizzes, setQuizzes] = useState([]);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [quizTimer, setQuizTimer] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizResult, setQuizResult] = useState(null);
+
+  // Live Classes Materials States
+  const [liveClasses, setLiveClasses] = useState([]);
+  const [liveClassesLoading, setLiveClassesLoading] = useState(false);
+  const [selectedLiveClass, setSelectedLiveClass] = useState(null);
+  const [liveMaterialsModalOpen, setLiveMaterialsModalOpen] = useState(false);
 
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const userId = user.id;
-  console.log(userId)
-
-  // Dummy data for PDFs and Quizzes
-  const [pdfMaterials, setPdfMaterials] = useState([
-    {
-      id: 1,
-      title: "React Fundamentals Guide",
-      description: "Complete guide to React basics and core concepts",
-      type: "pdf",
-      size: "2.4 MB",
-      pages: 45,
-      downloadUrl: "#",
-      icon: <FiFileText className="text-red-500" />
-    },
-    {
-      id: 2,
-      title: "JavaScript ES6+ Cheatsheet",
-      description: "Quick reference for modern JavaScript features",
-      type: "pdf",
-      size: "1.2 MB",
-      pages: 28,
-      downloadUrl: "#",
-      icon: <FiFileText className="text-blue-500" />
-    },
-    {
-      id: 3,
-      title: "CSS Grid & Flexbox Mastery",
-      description: "Advanced layout techniques with examples",
-      type: "pdf",
-      size: "3.1 MB",
-      pages: 52,
-      downloadUrl: "#",
-      icon: <FiFileText className="text-green-500" />
-    },
-    {
-      id: 4,
-      title: "Node.js Backend Development",
-      description: "Building scalable backend applications",
-      type: "pdf",
-      size: "4.2 MB",
-      pages: 67,
-      downloadUrl: "#",
-      icon: <FiFileText className="text-purple-500" />
-    }
-  ]);
-
-  const [quizzes, setQuizzes] = useState([
-    {
-      id: 1,
-      title: "JavaScript Basics Quiz",
-      description: "Test your fundamental JavaScript knowledge",
-      questions: 15,
-      duration: "20 min",
-      difficulty: "Beginner",
-      completed: true,
-      score: 85,
-      icon: <FiAward className="text-yellow-500" />
-    },
-    {
-      id: 2,
-      title: "React Components Quiz",
-      description: "Advanced React component patterns",
-      questions: 20,
-      duration: "30 min",
-      difficulty: "Intermediate",
-      completed: false,
-      score: null,
-      icon: <FiAward className="text-blue-500" />
-    },
-    {
-      id: 3,
-      title: "CSS Layout Challenge",
-      description: "Master CSS Grid and Flexbox",
-      questions: 12,
-      duration: "25 min",
-      difficulty: "Intermediate",
-      completed: false,
-      score: null,
-      icon: <FiAward className="text-green-500" />
-    },
-    {
-      id: 4,
-      title: "Full Stack Development",
-      description: "Comprehensive full-stack knowledge test",
-      questions: 25,
-      duration: "45 min",
-      difficulty: "Advanced",
-      completed: false,
-      score: null,
-      icon: <FiAward className="text-red-500" />
-    }
-  ]);
+  const userName = user.name || 'Student';
 
   // Fetch data from API
   useEffect(() => {
@@ -134,6 +60,7 @@ const CourseModuleInterface = () => {
             name: course.enrolledId.batchName,
             instructor: course.mentorName,
             progress: 0,
+            courseId: course.enrolledId._id,
             modules: course.modules.map(module => ({
               id: module._id,
               name: module.subjectName,
@@ -162,6 +89,8 @@ const CourseModuleInterface = () => {
           setCoursesData(transformedCourses);
           if (transformedCourses.length > 0) {
             setSelectedCourse(transformedCourses[0].id);
+            // Fetch quizzes for the first course
+            fetchQuizzes(transformedCourses[0].courseId);
           }
         } else {
           setError('Failed to fetch course data');
@@ -175,11 +104,90 @@ const CourseModuleInterface = () => {
 
     if (userId) {
       fetchData();
+      // Fetch live classes for the user
+      fetchLiveClasses();
     } else {
       setError('User not found. Please log in again.');
       setLoading(false);
     }
   }, [userId]);
+
+  // Fetch quizzes for the selected course
+  const fetchQuizzes = async (courseId) => {
+    if (!userId || !courseId) return;
+    
+    setQuizLoading(true);
+    try {
+      const response = await axios.get(`http://localhost:5001/api/myquizz/${userId}`, {
+        params: { courseId }
+      });
+      
+      if (response.data.quizzes) {
+        const quizzesWithProgress = response.data.quizzes.map(quiz => {
+          // Load previous progress from localStorage
+          const savedProgress = JSON.parse(localStorage.getItem(`quiz_progress_${quiz._id}_${userId}`) || '{}');
+          return {
+            ...quiz,
+            completed: savedProgress.completed || false,
+            score: savedProgress.score || null,
+            attemptDate: savedProgress.attemptDate || null,
+            totalQuestions: quiz.questions?.length || 0,
+            totalPoints: quiz.questions?.reduce((sum, q) => sum + (q.points || 1), 0) || 0
+          };
+        });
+        setQuizzes(quizzesWithProgress);
+      }
+    } catch (err) {
+      console.error('Error fetching quizzes:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to load quizzes. Please try again.'
+      });
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
+  // Fetch live classes for the user - NO FILTERING
+  const fetchLiveClasses = async () => {
+    if (!userId) return;
+    
+    setLiveClassesLoading(true);
+    try {
+      const response = await axios.get(`https://api.techsterker.com/api/live-classes/user/${userId}`);
+      
+      if (response.data.success) {
+        // DIRECT RESPONSE - NO FILTERING
+        setLiveClasses(response.data.data);
+        console.log('Live classes response:', response.data.data);
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: response.data.message || 'Failed to load live classes.'
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching live classes:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to load live classes. Please try again.'
+      });
+    } finally {
+      setLiveClassesLoading(false);
+    }
+  };
+
+  // Handle course change
+  const handleCourseChange = (courseId) => {
+    setSelectedCourse(courseId);
+    const course = coursesData.find(c => c.id === courseId);
+    if (course) {
+      fetchQuizzes(course.courseId);
+    }
+  };
 
   const selectedCourseData = coursesData.find(c => c.id === selectedCourse);
   const modules = selectedCourseData?.modules || [];
@@ -209,28 +217,58 @@ const CourseModuleInterface = () => {
   const handleDownload = async (url, filename = "document.pdf") => {
     try {
       setDownloading(true);
-      const response = await axios.get(url, { responseType: "blob" });
-      const contentType = response.headers["content-type"] || "application/pdf";
-      const contentDisposition = response.headers["content-disposition"];
-      if (contentDisposition && contentDisposition.includes("filename=")) {
-        filename = contentDisposition.split("filename=")[1].replace(/['"]/g, "");
+      
+      // If URL is a Cloudinary URL, we need to handle it differently
+      if (url.includes('cloudinary.com')) {
+        // Create a direct download link
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        Swal.fire("Success", "File download started!", "success");
+      } else {
+        // For other URLs, use axios to download
+        const response = await axios.get(url, { responseType: "blob" });
+        const contentType = response.headers["content-type"] || "application/octet-stream";
+        const contentDisposition = response.headers["content-disposition"];
+        if (contentDisposition && contentDisposition.includes("filename=")) {
+          filename = contentDisposition.split("filename=")[1].replace(/['"]/g, "");
+        }
+
+        const blob = new Blob([response.data], { type: contentType });
+        const downloadUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+
+        Swal.fire("Success", "File downloaded successfully!", "success");
       }
-
-      const blob = new Blob([response.data], { type: contentType });
-      const downloadUrl = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-
-      Swal.fire("Success", "File downloaded successfully!", "success");
     } catch (error) {
       console.error("Error downloading file:", error);
-      Swal.fire("Error", "Failed to download the file. Try again.", "error");
+      
+      // Fallback method
+      try {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        Swal.fire("Info", "File download started in new tab", "info");
+      } catch (fallbackError) {
+        Swal.fire("Error", "Failed to download the file. Try again.", "error");
+      }
     } finally {
       setDownloading(false);
     }
@@ -246,19 +284,339 @@ const CourseModuleInterface = () => {
     }
   };
 
-  const startQuiz = (quizId) => {
+  // Live Classes Materials Functions
+  const handleLiveClassSelect = (liveClass) => {
+    setSelectedLiveClass(liveClass);
+  };
+
+  const openLiveMaterialsModal = (liveClass) => {
+    setSelectedLiveClass(liveClass);
+    setLiveMaterialsModalOpen(true);
+  };
+
+  const getLiveClassFileIcon = (fileName) => {
+    const ext = fileName.split('.').pop().toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp', 'svg'].includes(ext)) {
+      return <FiImage className="text-green-600" size={20} />;
+    } else if (['pdf'].includes(ext)) {
+      return <FiFileText className="text-red-600" size={20} />;
+    } else if (['doc', 'docx'].includes(ext)) {
+      return <FiFile className="text-blue-600" size={20} />;
+    } else if (['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) {
+      return <FiVideo className="text-purple-600" size={20} />;
+    } else if (['mp3', 'wav', 'm4a', 'ogg'].includes(ext)) {
+      return <FiMusic className="text-yellow-600" size={20} />;
+    } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+      return <FiBox className="text-gray-600" size={20} />;
+    } else if (['ppt', 'pptx'].includes(ext)) {
+      return <FiFile className="text-orange-600" size={20} />;
+    } else if (['xls', 'xlsx', 'csv'].includes(ext)) {
+      return <FiFile className="text-green-700" size={20} />;
+    } else {
+      return <FiFile className="text-gray-500" size={20} />;
+    }
+  };
+
+  const formatLiveClassDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  const formatLiveClassTime = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Invalid time';
+    }
+  };
+
+  const getMentorName = (liveClass) => {
+    if (liveClass.enrollmentIdRef?.assignedMentors?.length > 0) {
+      const mentor = liveClass.enrollmentIdRef.assignedMentors[0];
+      return `${mentor.firstName} ${mentor.lastName}`;
+    }
+    return 'Mentor Not Assigned';
+  };
+
+  const getCourseName = (liveClass) => {
+    return liveClass.enrollmentIdRef?.courseId?.name || 'Course Not Available';
+  };
+
+  // Quiz Functions
+  const startQuiz = async (quiz) => {
+    setSelectedQuiz(quiz);
+    setQuizAnswers({});
+    setCurrentQuestionIndex(0);
+    setQuizSubmitted(false);
+    setQuizResult(null);
+    setIsQuizModalOpen(true);
+    
+    // Set timer (1 minute per question)
+    const totalTime = quiz.questions.length * 60;
+    setQuizTimer(totalTime);
+    
+    // Start timer
+    const timerInterval = setInterval(() => {
+      setQuizTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(timerInterval);
+          handleQuizSubmit(); // Auto submit when time ends
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleAnswerSelect = (questionId, answer) => {
+    setQuizAnswers(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < (selectedQuiz.questions.length - 1)) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrevQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const handleQuizSubmit = async () => {
+    if (!selectedQuiz) return;
+    
+    // Prepare answers object in format: { questionId: selectedOption }
+    const answers = {};
+    Object.keys(quizAnswers).forEach(questionId => {
+      answers[questionId] = quizAnswers[questionId];
+    });
+
+    try {
+      const response = await axios.post(
+        `https://api.techsterker.com/api/submit-quiz/${selectedQuiz._id}/${userId}`,
+        { answers }
+      );
+
+      const result = response.data;
+      
+      setQuizResult(result);
+      setQuizSubmitted(true);
+      
+      // Save progress to localStorage
+      const progress = {
+        completed: true,
+        score: result.summary.percentage,
+        totalScore: result.summary.totalScore,
+        totalPoints: result.summary.totalPossiblePoints,
+        correct: result.summary.correct,
+        totalQuestions: result.summary.totalQuestions,
+        attemptDate: new Date().toISOString(),
+        detailedResults: result.results
+      };
+      
+      localStorage.setItem(`quiz_progress_${selectedQuiz._id}_${userId}`, JSON.stringify(progress));
+      
+      // Update quizzes state
+      setQuizzes(prev => prev.map(q => 
+        q._id === selectedQuiz._id 
+          ? { 
+              ...q, 
+              completed: true, 
+              score: result.summary.percentage,
+              totalScore: result.summary.totalScore,
+              correctAnswers: result.summary.correct,
+              attemptDate: new Date().toISOString(),
+              detailedResults: result.results
+            }
+          : q
+      ));
+      
+      // Show congratulatory popup
+      showCongratulatoryPopup(result);
+      
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Submission Failed',
+        text: error.response?.data?.message || 'Failed to submit quiz. Please try again.'
+      });
+    }
+  };
+
+  const showCongratulatoryPopup = (result) => {
     Swal.fire({
-      title: `Start ${quizzes.find(q => q.id === quizId)?.title}?`,
-      text: "You'll have limited time to complete the quiz.",
-      icon: "info",
+      title: '🎉 Congratulations!',
+      html: `
+        <div style="text-align: center;">
+          <div style="font-size: 72px; margin-bottom: 20px;">🏆</div>
+          <h3 style="color: #10B981; font-size: 28px; font-weight:bold; margin-bottom: 15px;">
+            Quiz Submitted Successfully!
+          </h3>
+          
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                     padding: 25px; border-radius: 15px; color: white; margin: 20px 0;">
+            <div style="font-size: 42px; font-weight: bold; margin-bottom: 10px;">
+              ${result.summary.percentage}%
+            </div>
+            <div style="font-size: 18px; opacity: 0.9;">Overall Score</div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0;">
+            <div style="background: #EFF6FF; padding: 15px; border-radius: 10px;">
+              <div style="font-size: 24px; font-weight: bold; color: #3B82F6;">
+                ${result.summary.correct}/${result.summary.totalQuestions}
+              </div>
+              <div style="font-size: 14px; color: #6B7280;">Correct Answers</div>
+            </div>
+            
+            <div style="background: #ECFDF5; padding: 15px; border-radius: 10px;">
+              <div style="font-size: 24px; font-weight: bold; color: #10B981;">
+                ${result.summary.totalScore}/${result.summary.totalPossiblePoints}
+              </div>
+              <div style="font-size: 14px; color: #6B7280;">Points Earned</div>
+            </div>
+            
+            <div style="background: #FEF3C7; padding: 15px; border-radius: 10px;">
+              <div style="font-size: 24px; font-weight: bold; color: #F59E0B;">
+                ${result.summary.attempted}/${result.summary.totalQuestions}
+              </div>
+              <div style="font-size: 14px; color: #6B7280;">Questions Attempted</div>
+            </div>
+            
+            <div style="background: #FEE2E2; padding: 15px; border-radius: 10px;">
+              <div style="font-size: 24px; font-weight: bold; color: #EF4444;">
+                ${result.summary.incorrect || 0}
+              </div>
+              <div style="font-size: 14px; color: #6B7280;">Wrong Answers</div>
+            </div>
+          </div>
+          
+          <div style="margin-top: 25px; padding: 15px; background: #F3F4F6; border-radius: 10px;">
+            <p style="font-size: 16px; color: #4B5563; margin-bottom: 10px;">
+              <strong>Grade:</strong> ${result.summary.grade || 'A+'}
+            </p>
+            <p style="font-size: 14px; color: #6B7280; font-style: italic;">
+              "Great effort! Keep learning and improving!"
+            </p>
+          </div>
+          
+          <div style="margin-top: 20px; font-size: 14px; color: #9CA3AF;">
+            Submitted on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+          </div>
+        </div>
+      `,
+      width: 600,
+      padding: '2em',
+      background: '#fff',
+      backdrop: `
+        rgba(0, 0, 0, 0.4)
+        url("https://sweetalert2.github.io/images/nyan-cat.gif")
+        left top
+        no-repeat
+      `,
+      showConfirmButton: true,
+      confirmButtonText: 'View Detailed Results',
+      confirmButtonColor: '#3B82F6',
       showCancelButton: true,
-      confirmButtonText: "Start Quiz",
-      cancelButtonText: "Cancel"
+      cancelButtonText: 'Close',
+      customClass: {
+        popup: 'border-4 border-yellow-400 shadow-2xl'
+      }
     }).then((result) => {
       if (result.isConfirmed) {
-        Swal.fire("Quiz Started!", "Good luck with your quiz!", "success");
+        // User wants to see detailed results (already shown in modal)
       }
     });
+  };
+
+  const resetQuiz = () => {
+    setQuizAnswers({});
+    setCurrentQuestionIndex(0);
+    setQuizSubmitted(false);
+    setQuizResult(null);
+    setIsQuizModalOpen(false);
+    setSelectedQuiz(null);
+  };
+
+  const closeQuizModal = () => {
+    if (!quizSubmitted) {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: 'Your progress will be lost if you exit now.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, exit',
+        cancelButtonText: 'No, continue'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setIsQuizModalOpen(false);
+          setSelectedQuiz(null);
+          setQuizAnswers({});
+        }
+      });
+    } else {
+      setIsQuizModalOpen(false);
+      setSelectedQuiz(null);
+      setQuizAnswers({});
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Study Materials Functions
+  const getFileIcon = (fileName) => {
+    const ext = fileName.split('.').pop().toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'avif', 'webp'].includes(ext)) {
+      return <FiImage className="text-green-600" />;
+    } else if (['pdf'].includes(ext)) {
+      return <FiFileText className="text-red-600" />;
+    } else if (['doc', 'docx'].includes(ext)) {
+      return <FiFile className="text-blue-600" />;
+    } else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) {
+      return <FiVideo className="text-purple-600" />;
+    } else if (['mp3', 'wav', 'm4a'].includes(ext)) {
+      return <FiMusic className="text-yellow-600" />;
+    } else if (['zip', 'rar', '7z'].includes(ext)) {
+      return <FiBox className="text-gray-600" />;
+    } else {
+      return <FiFile className="text-gray-500" />;
+    }
+  };
+
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
   const filteredModules = modules.map(module => {
@@ -356,6 +714,428 @@ const CourseModuleInterface = () => {
         </div>
       )}
 
+      {/* Quiz Modal */}
+      {isQuizModalOpen && selectedQuiz && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Quiz Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedQuiz.title}</h2>
+                  <p className="text-blue-100 opacity-90">{selectedQuiz.description}</p>
+                </div>
+                <button
+                  onClick={closeQuizModal}
+                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                >
+                  <FiX className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-white/20 px-3 py-1 rounded-full">
+                    <span className="font-semibold">Question {currentQuestionIndex + 1} of {selectedQuiz.questions.length}</span>
+                  </div>
+                  <div className={`px-3 py-1 rounded-full ${quizTimer < 60 ? 'bg-red-500' : 'bg-green-500'}`}>
+                    <span className="font-bold">{formatTime(quizTimer)}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center">
+                  <div className="w-48 bg-white/20 rounded-full h-2">
+                    <div 
+                      className="bg-white h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${((currentQuestionIndex + 1) / selectedQuiz.questions.length) * 100}%` }}
+                    ></div>
+                  </div>
+                  <span className="ml-3 font-semibold">
+                    {Math.round(((currentQuestionIndex + 1) / selectedQuiz.questions.length) * 100)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quiz Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {!quizSubmitted ? (
+                <>
+                  {/* Current Question */}
+                  <div className="mb-8">
+                    <div className="flex items-start mb-6">
+                      <div className="bg-blue-100 text-blue-800 rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold text-xl">
+                        {currentQuestionIndex + 1}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                          {selectedQuiz.questions[currentQuestionIndex].question}
+                        </h3>
+                        <div className="flex items-center space-x-3">
+                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                            Points: {selectedQuiz.questions[currentQuestionIndex].points || 1}
+                          </span>
+                          <span className="text-gray-500 text-sm">
+                            Select one correct answer
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Options */}
+                    <div className="space-y-3 ml-16">
+                      {selectedQuiz.questions[currentQuestionIndex].options.map((option, index) => {
+                        const questionId = selectedQuiz.questions[currentQuestionIndex]._id;
+                        const isSelected = quizAnswers[questionId] === option;
+                        
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleAnswerSelect(questionId, option)}
+                            className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                              isSelected 
+                                ? 'border-blue-500 bg-blue-50' 
+                                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${
+                                isSelected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {String.fromCharCode(65 + index)}
+                              </div>
+                              <span className="text-lg">{option}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Navigation Buttons */}
+                  <div className="flex justify-between mt-8 pt-6 border-t">
+                    <button
+                      onClick={handlePrevQuestion}
+                      disabled={currentQuestionIndex === 0}
+                      className={`px-6 py-3 rounded-lg flex items-center ${
+                        currentQuestionIndex === 0 
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      <FiArrowLeft className="mr-2" />
+                      Previous
+                    </button>
+                    
+                    <div className="flex items-center space-x-3">
+                      {Object.keys(quizAnswers).length > 0 && (
+                        <span className="text-green-600 font-medium">
+                          {Object.keys(quizAnswers).length} of {selectedQuiz.questions.length} answered
+                        </span>
+                      )}
+                      
+                      {currentQuestionIndex < selectedQuiz.questions.length - 1 ? (
+                        <button
+                          onClick={handleNextQuestion}
+                          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                        >
+                          Next Question
+                          <FiChevronRight className="ml-2" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            Swal.fire({
+                              title: 'Submit Quiz?',
+                              text: 'Are you sure you want to submit your answers?',
+                              icon: 'question',
+                              showCancelButton: true,
+                              confirmButtonText: 'Yes, submit',
+                              cancelButtonText: 'Review answers'
+                            }).then((result) => {
+                              if (result.isConfirmed) {
+                                handleQuizSubmit();
+                              }
+                            });
+                          }}
+                          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+                        >
+                          <FiSend className="mr-2" />
+                          Submit Quiz
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Question Navigator */}
+                  <div className="mt-6 pt-6 border-t">
+                    <h4 className="text-lg font-semibold text-gray-700 mb-3">Question Navigator</h4>
+                    <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                      {selectedQuiz.questions.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentQuestionIndex(index)}
+                          className={`h-10 rounded-lg flex items-center justify-center ${
+                            currentQuestionIndex === index
+                              ? 'bg-blue-600 text-white'
+                              : quizAnswers[selectedQuiz.questions[index]?._id]
+                                ? 'bg-green-100 text-green-800 border-2 border-green-300'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Quiz Results */
+                <div className="py-8">
+                  <div className="text-center mb-8">
+                    <div className="mx-auto w-24 h-24 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center mb-6">
+                      <FiAward className="h-12 w-12 text-white" />
+                    </div>
+                    <h3 className="text-3xl font-bold text-gray-800 mb-2">Quiz Completed!</h3>
+                    <p className="text-gray-600">Your results are ready</p>
+                  </div>
+
+                  {quizResult && (
+                    <>
+                      {/* Score Card */}
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 mb-8 border-2 border-blue-200">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                          <div className="text-center">
+                            <div className="text-5xl font-bold text-blue-600 mb-2">
+                              {quizResult.summary?.percentage}%
+                            </div>
+                            <div className="text-gray-600">Overall Score</div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-4xl font-bold text-green-600 mb-2">
+                              {quizResult.summary?.correct}/{quizResult.summary?.totalQuestions}
+                            </div>
+                            <div className="text-gray-600">Correct Answers</div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-4xl font-bold text-purple-600 mb-2">
+                              {quizResult.summary?.totalScore}/{quizResult.summary?.totalPossiblePoints}
+                            </div>
+                            <div className="text-gray-600">Points Earned</div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-8 pt-8 border-t border-blue-200">
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div 
+                              className="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full"
+                              style={{ width: `${quizResult.summary?.percentage || 0}%` }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-sm text-gray-600 mt-2">
+                            <span>0%</span>
+                            <span>50%</span>
+                            <span>100%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Detailed Results */}
+                      <div className="mb-8">
+                        <h4 className="text-xl font-semibold text-gray-800 mb-4">Detailed Results</h4>
+                        <div className="space-y-4">
+                          {quizResult.results && quizResult.results.map((result, index) => {
+                            const isCorrect = result.status === 'correct';
+                            
+                            return (
+                              <div key={index} className={`p-4 rounded-xl border-2 ${
+                                isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                              }`}>
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex items-start">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                                      isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                    }`}>
+                                      {index + 1}
+                                    </div>
+                                    <div className="flex-1">
+                                      <h5 className="font-medium text-gray-800">{result.question}</h5>
+                                      <div className="mt-2 space-y-2">
+                                        <div className="flex items-center">
+                                          <span className="text-sm text-gray-600 mr-3">Your answer:</span>
+                                          <span className={`font-medium ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                                            {result.userAnswer || 'Not answered'}
+                                          </span>
+                                        </div>
+                                        {!isCorrect && (
+                                          <div className="flex items-center">
+                                            <span className="text-sm text-gray-600 mr-3">Correct answer:</span>
+                                            <span className="font-medium text-green-600">{result.correctAnswer}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                                    {result.points} point{result.points !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      onClick={resetQuiz}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                    >
+                      Retake Quiz
+                    </button>
+                    <button
+                      onClick={closeQuizModal}
+                      className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live Class Materials Modal */}
+      {liveMaterialsModalOpen && selectedLiveClass && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white">
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedLiveClass.className}</h2>
+                  <p className="text-purple-100 opacity-90">{selectedLiveClass.subjectName}</p>
+                  <div className="flex items-center space-x-4 mt-2 text-sm">
+                    <span className="flex items-center">
+                      <FiCalendar className="mr-1" />
+                      {formatLiveClassDate(selectedLiveClass.date)}
+                    </span>
+                    <span className="flex items-center">
+                      <FiClock className="mr-1" />
+                      {selectedLiveClass.timing}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setLiveMaterialsModalOpen(false)}
+                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                >
+                  <FiX className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {selectedLiveClass.materials && selectedLiveClass.materials.length > 0 ? (
+                <div>
+                  <div className="mb-6">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                      Class Materials ({selectedLiveClass.materials.length} files)
+                    </h3>
+                    <p className="text-gray-600">
+                      All materials shared during the live class are available for download.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {selectedLiveClass.materials.map((material, index) => (
+                      <div key={material._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-blue-50 p-3 rounded-lg">
+                            {getLiveClassFileIcon(material.fileName)}
+                          </div>
+                          <div>
+                            <h6 className="font-semibold text-gray-900">{material.fileName}</h6>
+                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <FiCalendar size={14} />
+                                {formatLiveClassDate(material.uploadedAt)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <FiClock size={14} />
+                                {formatLiveClassTime(material.uploadedAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          {material.fileUrl && (
+                            <a
+                              href={material.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+                            >
+                              <FiEye size={16} />
+                              View
+                            </a>
+                          )}
+                          
+                          {material.fileUrl && (
+                            <button
+                              onClick={() => handleDownload(material.fileUrl, material.fileName)}
+                              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 rounded-lg font-medium transition-all transform hover:scale-105 inline-flex items-center gap-2"
+                              disabled={downloading}
+                            >
+                              {downloading ? (
+                                <FiLoader className="animate-spin" size={16} />
+                              ) : (
+                                <FiDownload size={16} />
+                              )}
+                              Download
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <FiFileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h4 className="text-xl font-semibold text-gray-600 mb-2">No Materials Available</h4>
+                  <p className="text-gray-500">No materials were shared in this live class.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-gray-200 p-4 bg-gray-50">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">
+                  All materials are provided by the instructor
+                </span>
+                <button
+                  onClick={() => setLiveMaterialsModalOpen(false)}
+                  className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
@@ -379,6 +1159,12 @@ const CourseModuleInterface = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+              <FiUser className="h-4 w-4 text-indigo-600" />
+            </div>
+            <span className="hidden md:inline text-sm font-medium text-gray-700">{userName}</span>
           </div>
         </div>
       </header>
@@ -407,7 +1193,7 @@ const CourseModuleInterface = () => {
                 <select
                   className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                   value={selectedCourse || ''}
-                  onChange={(e) => setSelectedCourse(e.target.value)}
+                  onChange={(e) => handleCourseChange(e.target.value)}
                 >
                   {coursesData.map(course => (
                     <option key={course.id} value={course.id}>{course.name}</option>
@@ -466,6 +1252,12 @@ const CourseModuleInterface = () => {
                                 <FiClock className="h-3 w-3 mr-1 text-indigo-600" />
                                 <span>{classItem.duration}</span>
                               </div>
+                              {classItem.resources && classItem.resources.length > 0 && (
+                                <div className="flex items-center mt-1 text-xs text-blue-600">
+                                  <FiFileText className="h-3 w-3 mr-1" />
+                                  <span>{classItem.resources.length} resource(s)</span>
+                                </div>
+                              )}
                             </div>
                           </button>
                         ))}
@@ -490,6 +1282,7 @@ const CourseModuleInterface = () => {
               {[
                 { id: 'recorded', label: 'Recorded Classes', icon: <FiVideo className="w-4 h-4" /> },
                 { id: 'pdf', label: 'Study Materials', icon: <FiFileText className="w-4 h-4" /> },
+                { id: 'live', label: 'Live Class Materials', icon: <FiLiveVideo className="w-4 h-4" /> },
                 { id: 'quizzes', label: 'Quizzes', icon: <FiAward className="w-4 h-4" /> }
               ].map(section => (
                 <button
@@ -515,7 +1308,6 @@ const CourseModuleInterface = () => {
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {selectedClass ? (
                   <div className="flex flex-col h-full">
-                    {/* Video & Info */}
                     <div className="p-6 border-b border-gray-200">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                         <div className="flex-1">
@@ -569,64 +1361,287 @@ const CourseModuleInterface = () => {
               </div>
             )}
 
-            {/* PDF Materials Section */}
+            {/* Study Materials Section */}
             {activeSection === 'pdf' && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800">Study Materials</h2>
-                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                    {pdfMaterials.length} Materials
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {pdfMaterials.map(material => (
-                    <div key={material.id} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-3 bg-gray-100 rounded-lg">
-                            {material.icon}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-800 text-lg">{material.title}</h3>
-                            <p className="text-gray-600 text-sm mt-1">{material.description}</p>
-                          </div>
-                        </div>
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                {selectedClass ? (
+                  <div className="p-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-800">Study Materials</h2>
+                        <p className="text-gray-600 mt-1">
+                          Resources for: <span className="font-semibold text-indigo-700">{selectedClass.name}</span>
+                        </p>
                       </div>
-
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                        <div className="flex items-center space-x-4">
-                          <span>{material.size}</span>
-                          <span>{material.pages} pages</span>
-                        </div>
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                          PDF
+                      {selectedClass.resources && selectedClass.resources.length > 0 && (
+                        <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">
+                          {selectedClass.resources.length} file(s)
                         </span>
+                      )}
+                    </div>
+
+                    {selectedClass.resources && selectedClass.resources.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                          <div className="flex items-center">
+                            <FiInfo className="w-5 h-5 text-blue-600 mr-3" />
+                            <p className="text-sm text-blue-700">
+                              All study materials are provided by your instructor. You can view or download them for offline use.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {selectedClass.resources.map((resource, index) => (
+                            <div key={resource.id} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+                              <div className="flex items-start mb-4">
+                                <div className="p-3 bg-gray-100 rounded-lg mr-4">
+                                  {getFileIcon(resource.name)}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-800 text-lg mb-1 truncate">{resource.name}</h4>
+                                  <p className="text-sm text-gray-600">
+                                    {resource.type.toUpperCase()} file
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Added: {formatDate(resource.uploadedAt || selectedClass.date)}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex space-x-3">
+                                {resource.isPdf ? (
+                                  <button
+                                    onClick={() => viewPdf(resource.url, resource.name)}
+                                    className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+                                  >
+                                    <FiEye className="mr-2" /> View
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => window.open(resource.url, '_blank')}
+                                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                                  >
+                                    <FiExternalLink className="mr-2" /> Open
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDownload(resource.url, resource.name)}
+                                  className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
+                                  disabled={downloading}
+                                >
+                                  {downloading ? (
+                                    <FiLoader className="mr-2 animate-spin" />
+                                  ) : (
+                                    <FiDownload className="mr-2" />
+                                  )}
+                                  Download
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="mx-auto h-20 w-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                          <FiFileText className="h-10 w-10 text-gray-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-700 mb-2">No Study Materials</h3>
+                        <p className="text-gray-500 max-w-md mx-auto">
+                          There are no study materials available for this class yet. Check back later or contact your instructor.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 px-4">
+                    <div className="mx-auto h-20 w-20 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+                      <FiFileText className="h-10 w-10 text-indigo-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Select a Class</h2>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      Choose a class from the sidebar to view study materials, PDFs, and other resources.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Live Class Materials Section - DIRECT RESPONSE WITHOUT FILTERING */}
+            {activeSection === 'live' && (
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800">Live Class Materials</h2>
+                      <p className="text-gray-600 mt-1">
+                        All materials shared during your live sessions
+                      </p>
+                    </div>
+                    <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-semibold">
+                      {liveClasses.length} Live Classes
+                    </span>
+                  </div>
+
+                  {liveClassesLoading ? (
+                    <div className="text-center py-12">
+                      <FiLoader className="h-8 w-8 animate-spin text-indigo-600 mx-auto mb-4" />
+                      <p className="text-gray-600">Loading live classes...</p>
+                    </div>
+                  ) : liveClasses.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="mx-auto h-20 w-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <FiLiveVideo className="h-10 w-10 text-gray-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">No Live Classes Found</h3>
+                      <p className="text-gray-500 max-w-md mx-auto">
+                        You don't have any live classes scheduled yet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                        <div className="flex items-center">
+                          <FiInfo className="w-5 h-5 text-purple-600 mr-3" />
+                          <p className="text-sm text-purple-700">
+                            All materials shared during your live classes are available here. You can view and download them.
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => viewPdf(material.downloadUrl, material.title)}
-                          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-                        >
-                          <FiEye className="w-4 h-4" />
-                          <span>View PDF</span>
-                        </button>
-                        <button
-                          onClick={() => handleDownload(material.downloadUrl, material.title)}
-                          className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center space-x-2"
-                          disabled={downloading}
-                        >
-                          {downloading ? (
-                            <FiLoader className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <FiDownload className="w-4 h-4" />
-                          )}
-                          <span>Download</span>
-                        </button>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {liveClasses.map((liveClass, index) => {
+                          const hasMaterials = liveClass.materials && liveClass.materials.length > 0;
+                          const mentorName = getMentorName(liveClass);
+                          const courseName = getCourseName(liveClass);
+                          
+                          return (
+                            <div key={liveClass._id} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+                              <div className="flex justify-between items-start mb-4">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-800 text-lg mb-1">{liveClass.className}</h4>
+                                  <p className="text-sm text-gray-600 mb-2">{liveClass.subjectName}</p>
+                                  
+                                  <div className="space-y-2 mb-3">
+                                    <div className="flex items-center text-xs text-gray-500">
+                                      <FiCalendar className="h-3 w-3 mr-1" />
+                                      <span>{formatLiveClassDate(liveClass.date)}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-500">
+                                      <FiClock className="h-3 w-3 mr-1" />
+                                      <span>{liveClass.timing}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-500">
+                                      <FiUser className="h-3 w-3 mr-1" />
+                                      <span>{mentorName}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-blue-600">
+                                      <FiBook className="h-3 w-3 mr-1" />
+                                      <span>{courseName}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {hasMaterials && (
+                                    <div className="flex items-center text-sm text-green-600">
+                                      <FiFileText className="h-4 w-4 mr-2" />
+                                      <span>{liveClass.materials.length} material(s) available</span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="ml-2">
+                                  <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
+                                    Live
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center justify-between">
+                                <div className="text-xs text-gray-500">
+                                  <span className="block">
+                                    Materials: {hasMaterials ? 'Available' : 'Not Available'}
+                                  </span>
+                                </div>
+                                
+                                <div className="flex space-x-2">
+                                  {liveClass.link && (
+                                    <a
+                                      href={liveClass.link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                                    >
+                                      <FiVideo className="h-3 w-3 mr-1" />
+                                      Join
+                                    </a>
+                                  )}
+                                  
+                                  {hasMaterials && (
+                                    <button
+                                      onClick={() => openLiveMaterialsModal(liveClass)}
+                                      className="px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+                                    >
+                                      <FiDownload className="h-3 w-3 mr-1" />
+                                      Materials
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Live Class Statistics */}
+                      <div className="mt-8 pt-8 border-t border-gray-200">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Live Classes Summary</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-5 rounded-xl border border-blue-200">
+                            <div className="flex items-center">
+                              <div className="p-3 bg-blue-500 rounded-lg mr-4">
+                                <FiLiveVideo className="h-6 w-6 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-2xl font-bold text-blue-700">
+                                  {liveClasses.length}
+                                </div>
+                                <div className="text-sm text-blue-600">Total Live Classes</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-gradient-to-r from-green-50 to-green-100 p-5 rounded-xl border border-green-200">
+                            <div className="flex items-center">
+                              <div className="p-3 bg-green-500 rounded-lg mr-4">
+                                <FiFileText className="h-6 w-6 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-2xl font-bold text-green-700">
+                                  {liveClasses.reduce((sum, lc) => sum + (lc.materials?.length || 0), 0)}
+                                </div>
+                                <div className="text-sm text-green-600">Total Materials</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-5 rounded-xl border border-purple-200">
+                            <div className="flex items-center">
+                              <div className="p-3 bg-purple-500 rounded-lg mr-4">
+                                <FiAward className="h-6 w-6 text-white" />
+                              </div>
+                              <div>
+                                <div className="text-2xl font-bold text-purple-700">
+                                  {liveClasses.filter(lc => lc.materials?.length > 0).length}
+                                </div>
+                                <div className="text-sm text-purple-600">Classes with Materials</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
@@ -635,66 +1650,186 @@ const CourseModuleInterface = () => {
             {activeSection === 'quizzes' && (
               <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800">Knowledge Tests</h2>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800">Knowledge Tests</h2>
+                    <p className="text-gray-600 mt-1">
+                      Test your understanding with these quizzes
+                    </p>
+                  </div>
                   <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-semibold">
                     {quizzes.length} Quizzes
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {quizzes.map(quiz => (
-                    <div key={quiz.id} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-3 bg-gray-100 rounded-lg">
-                            {quiz.icon}
+                {quizLoading ? (
+                  <div className="text-center py-12">
+                    <FiLoader className="h-8 w-8 animate-spin text-indigo-600 mx-auto mb-4" />
+                    <p className="text-gray-600">Loading quizzes...</p>
+                  </div>
+                ) : quizzes.length === 0 ? (
+                  <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border-2 border-dashed border-gray-300">
+                    <div className="mx-auto h-20 w-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <FiAward className="h-10 w-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No Quizzes Available</h3>
+                    <p className="text-gray-500 max-w-md mx-auto">
+                      There are no quizzes available for this course yet. Check back later!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {quizzes.map(quiz => {
+                      const completed = quiz.completed || false;
+                      const score = quiz.score || 0;
+                      
+                      return (
+                        <div key={quiz._id} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <div className={`p-3 rounded-lg ${completed ? 'bg-green-100' : 'bg-purple-100'}`}>
+                                <FiAward className={`h-6 w-6 ${completed ? 'text-green-600' : 'text-purple-600'}`} />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-gray-800 text-lg">{quiz.title}</h3>
+                                <p className="text-gray-600 text-sm mt-1">{quiz.description}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="text-center p-3 bg-blue-50 rounded-lg">
+                              <div className="text-2xl font-bold text-blue-700">{quiz.totalQuestions}</div>
+                              <div className="text-xs text-blue-600">Questions</div>
+                            </div>
+                            <div className="text-center p-3 bg-green-50 rounded-lg">
+                              <div className="text-2xl font-bold text-green-700">{quiz.totalPoints}</div>
+                              <div className="text-xs text-green-600">Total Points</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
+                            <div className="flex items-center space-x-2">
+                              <FiClock className="w-4 h-4" />
+                              <span>{Math.ceil(quiz.totalQuestions * 1.5)} min</span>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              completed 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {completed ? 'Completed' : 'Not Attempted'}
+                            </span>
+                          </div>
+
+                          {completed ? (
+                            <div className="space-y-4">
+                              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <FiCheckCircle className="w-5 h-5 text-green-600" />
+                                    <span className="text-green-800 font-medium">Attempted</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-2xl font-bold text-green-600">{score}%</div>
+                                    <div className="text-xs text-green-600">Your Score</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex space-x-3">
+                                <button
+                                  onClick={() => startQuiz(quiz)}
+                                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                                >
+                                  Retake Quiz
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const progress = JSON.parse(localStorage.getItem(`quiz_progress_${quiz._id}_${userId}`) || '{}');
+                                    Swal.fire({
+                                      title: 'Quiz Results',
+                                      html: `
+                                        <div class="text-left">
+                                          <p><strong>Score:</strong> ${progress.score || 0}%</p>
+                                          <p><strong>Correct Answers:</strong> ${progress.correct || 0}/${progress.totalQuestions || 0}</p>
+                                          <p><strong>Attempt Date:</strong> ${progress.attemptDate ? new Date(progress.attemptDate).toLocaleDateString() : 'N/A'}</p>
+                                        </div>
+                                      `,
+                                      icon: 'info'
+                                    });
+                                  }}
+                                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                  View Details
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startQuiz(quiz)}
+                              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-4 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-[1.02] flex items-center justify-center space-x-2"
+                            >
+                              <FiAward className="w-5 h-5" />
+                              <span className="font-medium">Start Quiz</span>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Quiz Statistics */}
+                {quizzes.length > 0 && (
+                  <div className="mt-8 pt-8 border-t border-gray-200">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-4">Your Quiz Progress</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-5 rounded-xl border border-blue-200">
+                        <div className="flex items-center">
+                          <div className="p-3 bg-blue-500 rounded-lg mr-4">
+                            <FiAward className="h-6 w-6 text-white" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-800 text-lg">{quiz.title}</h3>
-                            <p className="text-gray-600 text-sm mt-1">{quiz.description}</p>
+                            <div className="text-2xl font-bold text-blue-700">
+                              {quizzes.filter(q => q.completed).length}/{quizzes.length}
+                            </div>
+                            <div className="text-sm text-blue-600">Quizzes Completed</div>
                           </div>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                        <div className="flex items-center space-x-4">
-                          <span>{quiz.questions} questions</span>
-                          <span>{quiz.duration}</span>
-                        </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          quiz.difficulty === 'Beginner' ? 'bg-green-100 text-green-800' :
-                          quiz.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {quiz.difficulty}
-                        </span>
-                      </div>
-
-                      {quiz.completed ? (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <FiCheckCircle className="w-5 h-5 text-green-600" />
-                              <span className="text-green-800 font-medium">Completed</span>
+                      
+                      <div className="bg-gradient-to-r from-green-50 to-green-100 p-5 rounded-xl border border-green-200">
+                        <div className="flex items-center">
+                          <div className="p-3 bg-green-500 rounded-lg mr-4">
+                            <FiBarChart2 className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-green-700">
+                              {quizzes.filter(q => q.completed).length > 0 
+                                ? Math.round(quizzes.filter(q => q.completed).reduce((sum, q) => sum + (q.score || 0), 0) / quizzes.filter(q => q.completed).length)
+                                : 0
+                              }%
                             </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold text-green-600">{quiz.score}%</div>
-                              <div className="text-xs text-green-600">Your Score</div>
-                            </div>
+                            <div className="text-sm text-green-600">Average Score</div>
                           </div>
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => startQuiz(quiz.id)}
-                          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 px-4 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
-                        >
-                          <FiAward className="w-4 h-4" />
-                          <span>Start Quiz</span>
-                        </button>
-                      )}
+                      </div>
+                      
+                      <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-5 rounded-xl border border-purple-200">
+                        <div className="flex items-center">
+                          <div className="p-3 bg-purple-500 rounded-lg mr-4">
+                            <FiCheckCircle className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-purple-700">
+                              {quizzes.reduce((sum, q) => sum + (q.totalQuestions || 0), 0)}
+                            </div>
+                            <div className="text-sm text-purple-600">Total Questions</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

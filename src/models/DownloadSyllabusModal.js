@@ -84,7 +84,7 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
       if (!course) return;
 
       const response = await axios.post(
-        'https://api.techsterker.com/api/send-otp',
+        'http://localhost:5001/api/send-otp',
         {
           name,
           phoneNumber: `+91${phone}`,

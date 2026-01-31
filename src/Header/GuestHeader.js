@@ -769,27 +769,19 @@ const GuestHeader = ({ onLogin }) => {
     <>
       <nav className={`header-nav fixed top-0 left-0 w-100 ${responsiveClasses.navHeight} bg-white shadow-md z-50 transition-all ${isScrolled ? 'bg-white/95 backdrop-blur-md' : ''}`}>
         <div className={`flex justify-around items-center h-full ${responsiveClasses.menuPadding} ${screenSize === 'desktop-large' ? 'max-w-[1600px]' : screenSize === 'desktop' ? 'max-w-[1400px]' : screenSize === 'laptop' ? 'max-w-[1200px]' : 'max-w-full'} mx-auto`}>
-          <div className="cursor-pointer" onClick={() => navigate('/')}>
-            <img
-              src="/logo/smalllogo.png"
-              alt="HiCap Logo"
-              className={`${responsiveClasses.logoHeight} w-auto object-contain`}
-            />
+          <div className="flex items-center gap-2">
+            <div className="cursor-pointer" onClick={() => navigate('/')}>
+              <img
+                src="/logo/smalllogo.png"
+                alt="HiCap Logo"
+                className={`${responsiveClasses.logoHeight} w-auto object-contain`}
+              />
+            </div>
           </div>
 
           {/* Mobile Menu Button, Cart and Login - Show for tablets and smaller screens */}
           {(screenSize === 'tablet' || screenSize === 'mobile-large' || screenSize === 'mobile' || screenSize === 'mobile-small') && (
             <div className={`flex items-center ${screenSize === 'mobile-small' ? 'gap-1.5' : 'gap-2'}`}>
-              {/* Cart Button for Mobile */}
-              {/* <div className="relative">
-                <button
-                  onClick={() => navigate('/payment')}
-                  className={`cart-button ${responsiveClasses.iconSize} flex items-center justify-center bg-gray-100 text-gray-700 border border-gray-300 rounded cursor-pointer hover:bg-gray-200 transition-colors relative`}
-                >
-                  <FaCreditCard className={responsiveClasses.iconText} />
-                </button>
-              </div> */}
-
               <button
                 onClick={() => setShowLoginModal(true)}
                 className={`${responsiveClasses.buttonPadding} bg-gradient-to-br from-[#a51d34] to-[#d32f2f] text-white border-none rounded ${responsiveClasses.buttonText} cursor-pointer whitespace-nowrap hover:opacity-90 transition-opacity`}
@@ -809,6 +801,20 @@ const GuestHeader = ({ onLogin }) => {
           {/* Desktop Navigation - Show for laptop and larger screens */}
           {screenSize !== 'tablet' && screenSize !== 'mobile-large' && screenSize !== 'mobile' && screenSize !== 'mobile-small' && (
             <div className="flex items-center">
+              {/* Home Navigation Item - Added to the menu */}
+              <div className="relative flex items-center">
+                <span
+                  className={`px-4 py-2 text-base font-medium cursor-pointer rounded-md transition-colors ${location.pathname === '/'
+                    ? "text-[#a51d34]"
+                    : "text-gray-800 hover:text-[#a51d34]"
+                    }`}
+                  onClick={() => navigate('/')}
+                >
+                  Home
+                </span>
+                <div className="h-5 w-px bg-gray-300 mx-2"></div>
+              </div>
+
               {menuItems.map((item, idx) => {
                 const isLast = false; // force separators after every item
 
@@ -918,18 +924,6 @@ const GuestHeader = ({ onLogin }) => {
                 }
               })}
 
-              {/* Desktop Cart Button */}
-              {/* <div className="relative flex items-center">
-                <button
-                  onClick={() => navigate("/payment")}
-                  className="cart-button flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-700 border border-gray-300 rounded-full cursor-pointer hover:bg-gray-200 transition-colors relative"
-                >
-                  <FaCreditCard className="text-lg textcolor" />
-                </button>
-                
-                <div className="h-5 w-px bg-gray-300 mx-2"></div>
-              </div> */}
-
               {/* Login Button */}
               <button
                 onClick={() => setShowLoginModal(true)}
@@ -948,11 +942,13 @@ const GuestHeader = ({ onLogin }) => {
           <div className={`absolute top-0 left-0 w-full h-full bg-black/50 transition-opacity ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}`} onClick={() => setIsMobileMenuOpen(false)}></div>
           <div className={`absolute top-0 left-[-100%] w-full h-full bg-white transition-transform flex flex-col ${isMobileMenuOpen ? 'translate-x-full' : ''}`}>
             <div className={`flex justify-between items-center ${screenSize === 'mobile-small' ? 'p-3' : 'p-4'} border-b border-gray-200`}>
-              <img
-                src="/logo/hicapnewlogo.png"
-                alt="HiCap Logo"
-                className={`${screenSize === 'mobile-small' ? 'h-7' : screenSize === 'mobile' ? 'h-8' : 'h-10'}`}
-              />
+              <div className="flex items-center gap-2">
+                <img
+                  src="/logo/hicapnewlogo.png"
+                  alt="HiCap Logo"
+                  className={`${screenSize === 'mobile-small' ? 'h-7' : screenSize === 'mobile' ? 'h-8' : 'h-10'}`}
+                />
+              </div>
               <button
                 className={`bg-transparent border-none ${screenSize === 'mobile-small' ? 'text-lg' : screenSize === 'mobile' ? 'text-xl' : 'text-2xl'} text-gray-800 cursor-pointer hover:text-[#a51d34] transition-colors`}
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -962,6 +958,17 @@ const GuestHeader = ({ onLogin }) => {
             </div>
 
             <div className="flex-grow overflow-y-auto py-2">
+              {/* Home option for mobile */}
+              <div
+                className={`flex items-center gap-3 ${screenSize === 'mobile-small' ? 'p-2.5' : 'p-3'} cursor-pointer transition-all border-b border-gray-100 hover:bg-gray-50 ${location.pathname === '/' ? 'text-[#a51d34] bg-[#f8d7da]' : ''}`}
+                onClick={() => {
+                  navigate('/');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                <span className={`${screenSize === 'mobile-small' ? 'text-sm' : 'text-base'} font-medium`}>Home</span>
+              </div>
+
               {menuItems.map((item, idx) => {
                 if (item.isMegaMenu) {
                   return (
@@ -1056,9 +1063,6 @@ const GuestHeader = ({ onLogin }) => {
           </div>
         </div>
       )}
-
-
-
 
       <a
         href="https://wa.me/919000239871" // replace with your WhatsApp number
@@ -1341,8 +1345,6 @@ const GuestHeader = ({ onLogin }) => {
           </div>
         </div>
       )}
-
-
 
       <ContactUsModal
         show={showContactModal}

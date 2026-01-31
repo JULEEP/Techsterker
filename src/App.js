@@ -46,6 +46,9 @@ import Chat from "./ChatModule/ChatModule";
 import StudentChats from "./ChatModule/ChatModule";
 import BlogDetails from "./Pages/BlogDetails";
 import ScrollToTop from "./newone/ScrollToTop";
+import AttendanceProgress from "./components/AttendanceProgress";
+import PaymentOverview from "./components/PaymentOverview";
+import ProfilePage from "./components/ProfilePage";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -169,6 +172,9 @@ function App() {
           <Route path="browsecourses" element={<BrowseCourses />} />
           <Route path="course/:slug" element={<DashboardCourseDetail />} />
           <Route path="chat" element={<StudentChats />} />
+          <Route path="attendanceprogress" element={<AttendanceProgress />} />
+          <Route path="payment" element={<PaymentOverview />} />
+          <Route path="myprofile" element={<ProfilePage />} />
         </Route>
 
         {/* Redirect unknown routes */}

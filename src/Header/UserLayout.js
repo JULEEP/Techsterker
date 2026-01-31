@@ -58,16 +58,19 @@ const UserLayout = ({ user, onLogout }) => {
         style={{
           marginLeft: isMobile ? 0 : (isSidebarCollapsed ? '80px' : '250px'),
           transition: 'margin-left 0.3s ease',
-          width: isMobile ? '100%' : `calc(100% - ${isSidebarCollapsed ? '80px' : '250px'})`
+          width: isMobile ? '100%' : `calc(100% - ${isSidebarCollapsed ? '80px' : '250px'})`,
+          paddingTop: '70px' // Added padding for fixed navbar
         }}
       >
-        {/* Top Navbar */}
+        {/* Top Navbar - Fixed to prevent hiding on scroll */}
         <nav
-          className="navbar navbar-expand-lg navbar-dark"
+          className="navbar navbar-expand-lg navbar-dark fixed-top"
           style={{
-            background: 'linear-gradient(to bottom, #c94a5a, #c94a5a, #c94a5a, #c94a5a, #c94a5a)',
+            background: 'linear-gradient(145deg, #8a2be2 0%, #9370db 25%, #ba55d3 50%, #da70d6 75%, #dda0dd 100%)',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            padding: '0.75rem 1rem'
+            padding: '0.75rem 1rem',
+            height: '70px',
+            zIndex: 1030 // Ensure it stays above other content
           }}
         >
           <div className="container-fluid">
@@ -90,8 +93,11 @@ const UserLayout = ({ user, onLogout }) => {
           </div>
         </nav>
 
-        {/* Page Content */}
-        <div className="p-3 p-md-4" style={{ minHeight: 'calc(100vh - 80px)', background: '#f8f9fa' }}>
+        {/* Page Content - Adjusted top padding */}
+        <div className="p-3 p-md-4" style={{ 
+          minHeight: 'calc(100vh - 70px)', // Adjusted for navbar height
+          background: '#f8f9fa'
+        }}>
           <Outlet />
         </div>
       </div>

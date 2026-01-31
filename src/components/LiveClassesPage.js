@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { MoveRight, Clock, Users, Calendar } from 'lucide-react';
+import { MoveRight, Clock, Users, Calendar, Download, X, FileText, Image, File } from 'lucide-react';
 import { MdOutlineTimer } from 'react-icons/md';
 import { SiGoogleclassroom } from 'react-icons/si';
-import { FaChevronLeft, FaChevronRight, FaVideo, FaUserTie } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaVideo, FaUserTie, FaFilePdf, FaFileImage, FaFileAlt } from 'react-icons/fa';
 
 const LiveClassesPage = () => {
   const [liveClasses, setLiveClasses] = useState([]);
@@ -15,6 +15,11 @@ const LiveClassesPage = () => {
     upcoming: 0,
     completed: 0
   });
+
+  // Materials modal state
+  const [showMaterialsModal, setShowMaterialsModal] = useState(false);
+  const [selectedClassMaterials, setSelectedClassMaterials] = useState([]);
+  const [selectedClassName, setSelectedClassName] = useState('');
 
   // Get user from session storage
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -70,7 +75,9 @@ const LiveClassesPage = () => {
             duration: cls.timing || '1 hour',
             meetLink: cls.link,
             rawDate: cls.date,
-            rawTiming: cls.timing
+            rawTiming: cls.timing,
+            // Include materials data
+            materials: cls.materials || []
           };
         });
 
@@ -111,6 +118,59 @@ const LiveClassesPage = () => {
     });
 
     setStats(stats);
+  };
+
+  // Materials functions
+  const handleViewMaterials = (materials, className) => {
+    setSelectedClassMaterials(materials || []);
+    setSelectedClassName(className);
+    setShowMaterialsModal(true);
+  };
+
+  const handleDownload = (fileUrl, fileName) => {
+    if (!fileUrl) {
+      alert('Download link not available');
+      return;
+    }
+    
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = fileName;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const getFileIcon = (fileName) => {
+    const ext = fileName.split('.').pop().toLowerCase();
+    const fileTypes = {
+      pdf: <FaFilePdf className="text-red-500" size={20} />,
+      jpg: <FaFileImage className="text-green-500" size={20} />,
+      jpeg: <FaFileImage className="text-green-500" size={20} />,
+      png: <FaFileImage className="text-green-500" size={20} />,
+      gif: <FaFileImage className="text-green-500" size={20} />,
+      avif: <FaFileImage className="text-green-500" size={20} />,
+      doc: <FaFileAlt className="text-blue-500" size={20} />,
+      docx: <FaFileAlt className="text-blue-500" size={20} />,
+      txt: <FaFileAlt className="text-blue-500" size={20} />,
+    };
+    return fileTypes[ext] || <File className="text-gray-500" size={20} />;
+  };
+
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
   // Calendar functions
@@ -159,7 +219,7 @@ const LiveClassesPage = () => {
   const getEventsForDate = (date) => {
     if (!date) return [];
     return liveClasses.filter(cls => 
-      new Date(cls.timing).toDateString() === date.toDateString()
+      new Date(cls.rawDate).toDateString() === date.toDateString()
     );
   };
 
@@ -203,7 +263,7 @@ const LiveClassesPage = () => {
   const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-6 relative">
       {/* Header Section */}
       <div className="mb-6">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20">
@@ -415,6 +475,17 @@ const LiveClassesPage = () => {
                       <div className="flex-1">
                         <h6 className="font-semibold text-gray-900 mb-1">{event.title}</h6>
                         <p className="text-gray-600 text-sm mb-2">{event.description}</p>
+                        
+                        {/* Materials indicator */}
+                        {event.materials && event.materials.length > 0 && (
+                          <div className="mb-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs">
+                              <FileText size={12} className="mr-1" />
+                              {event.materials.length} material(s) available
+                            </span>
+                          </div>
+                        )}
+                        
                         <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-3">
                           <span className="flex items-center">
                             <FaUserTie className="w-3 h-3 mr-1" />
@@ -429,23 +500,36 @@ const LiveClassesPage = () => {
                             {formatDateTime(event.timing)}
                           </span>
                         </div>
-                        <a
-                          href={event.meetLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`mt-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all transform hover:scale-105 shadow-md inline-flex items-center gap-2 ${
-                            isClassLive(event.timing) 
-                              ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white' 
-                              : isClassUpcoming(event.timing)
-                                ? 'bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white'
-                                : 'bg-gray-400 text-white cursor-not-allowed'
-                          }`}
-                          disabled={isClassEnded(event.timing)}
-                        >
-                          {isClassLive(event.timing) ? 'Join Live' : 
-                           isClassUpcoming(event.timing) ? 'Join Soon' : 'Class Ended'}
-                          <MoveRight size={16} />
-                        </a>
+                        
+                        <div className="flex gap-2">
+                          <a
+                            href={event.meetLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all transform hover:scale-105 shadow-md inline-flex items-center gap-2 ${
+                              isClassLive(event.timing) 
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white' 
+                                : isClassUpcoming(event.timing)
+                                  ? 'bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white'
+                                  : 'bg-gray-400 text-white cursor-not-allowed'
+                            }`}
+                            disabled={isClassEnded(event.timing)}
+                          >
+                            {isClassLive(event.timing) ? 'Join Live' : 
+                             isClassUpcoming(event.timing) ? 'Join Soon' : 'Class Ended'}
+                            <MoveRight size={16} />
+                          </a>
+                          
+                          {event.materials && event.materials.length > 0 && (
+                            <button
+                              onClick={() => handleViewMaterials(event.materials, event.title)}
+                              className="px-4 py-2 rounded-lg font-semibold text-sm bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 transition-all transform hover:scale-105 shadow-md inline-flex items-center gap-2"
+                            >
+                              <Download size={16} />
+                              Materials
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -486,6 +570,13 @@ const LiveClassesPage = () => {
                     <div>
                       <h6 className="font-bold text-gray-900 text-sm mb-1">{cls.title}</h6>
                       <p className="text-gray-600 text-xs">{cls.description}</p>
+                      
+                      {cls.materials && cls.materials.length > 0 && (
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs">
+                          <FileText size={10} className="mr-1" />
+                          {cls.materials.length} file(s)
+                        </span>
+                      )}
                     </div>
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${
                       isClassLive(cls.timing) ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
@@ -501,18 +592,30 @@ const LiveClassesPage = () => {
                         {cls.mentorName}
                       </span>
                     </div>
-                    <a
-                      href={cls.meetLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all transform hover:scale-105 ${
-                        isClassLive(cls.timing)
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
-                          : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white'
-                      }`}
-                    >
-                      {isClassLive(cls.timing) ? 'Join' : 'View'}
-                    </a>
+                    <div className="flex gap-2">
+                      <a
+                        href={cls.meetLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all transform hover:scale-105 ${
+                          isClassLive(cls.timing)
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+                            : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white'
+                        }`}
+                      >
+                        {isClassLive(cls.timing) ? 'Join' : 'View'}
+                      </a>
+                      
+                      {cls.materials && cls.materials.length > 0 && (
+                        <button
+                          onClick={() => handleViewMaterials(cls.materials, cls.title)}
+                          className="px-3 py-1 rounded-lg text-xs font-semibold bg-gradient-to-r from-purple-500 to-pink-600 text-white transition-all transform hover:scale-105 inline-flex items-center gap-1"
+                        >
+                          <Download size={10} />
+                          Files
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -551,6 +654,7 @@ const LiveClassesPage = () => {
             {liveClasses.map((cls) => {
               const isLive = isClassLive(cls.timing);
               const isUpcoming = isClassUpcoming(cls.timing);
+              const hasMaterials = cls.materials && cls.materials.length > 0;
 
               return (
                 <div key={cls._id} className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-5 border border-gray-200 hover:shadow-xl transition-all duration-300 hover:scale-105">
@@ -583,24 +687,43 @@ const LiveClassesPage = () => {
                       <MdOutlineTimer className="w-4 h-4 mr-2 text-orange-600" />
                       <span>{formatDateTime(cls.timing)}</span>
                     </div>
+                    
+                    {hasMaterials && (
+                      <div className="flex items-center text-sm text-green-600">
+                        <FileText className="w-4 h-4 mr-2" />
+                        <span>{cls.materials.length} study material(s) available</span>
+                      </div>
+                    )}
                   </div>
 
-                  <a
-                    href={cls.meetLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`w-full py-3 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-md flex items-center justify-center gap-2 ${
-                      isLive
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white'
-                        : isUpcoming
-                          ? 'bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white'
-                          : 'bg-gray-400 text-white cursor-not-allowed'
-                    }`}
-                    disabled={!isLive && !isUpcoming}
-                  >
-                    {isLive ? 'Join Live Class' : isUpcoming ? 'Join Soon' : 'Class Ended'}
-                    <MoveRight size={16} />
-                  </a>
+                  <div className="flex gap-2">
+                    <a
+                      href={cls.meetLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex-1 py-3 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-md flex items-center justify-center gap-2 ${
+                        isLive
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white'
+                          : isUpcoming
+                            ? 'bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white'
+                            : 'bg-gray-400 text-white cursor-not-allowed'
+                      }`}
+                      disabled={!isLive && !isUpcoming}
+                    >
+                      {isLive ? 'Join Live Class' : isUpcoming ? 'Join Soon' : 'Class Ended'}
+                      <MoveRight size={16} />
+                    </a>
+                    
+                    {hasMaterials && (
+                      <button
+                        onClick={() => handleViewMaterials(cls.materials, cls.title)}
+                        className="px-4 py-3 rounded-xl font-semibold bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 transition-all transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
+                      >
+                        <Download size={16} />
+                        Files
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -608,7 +731,108 @@ const LiveClassesPage = () => {
         )}
       </div>
 
-    
+      {/* Materials Modal */}
+      {showMaterialsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-bold flex items-center gap-2">
+                    <FileText size={24} />
+                    Study Materials
+                  </h3>
+                  <p className="text-purple-100 mt-1">For: {selectedClassName}</p>
+                </div>
+                <button
+                  onClick={() => setShowMaterialsModal(false)}
+                  className="bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {selectedClassMaterials.length === 0 ? (
+                <div className="text-center py-10">
+                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h4 className="text-xl font-semibold text-gray-600 mb-2">No Materials Available</h4>
+                  <p className="text-gray-500">Materials will be uploaded by the mentor soon.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-600 mb-4">
+                    Total {selectedClassMaterials.length} file(s) available for download
+                  </div>
+                  
+                  {selectedClassMaterials.map((material, index) => (
+                    <div key={material._id || index} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          {getFileIcon(material.fileName)}
+                        </div>
+                        <div>
+                          <h6 className="font-semibold text-gray-900">{material.fileName}</h6>
+                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <Calendar size={14} />
+                              {formatDate(material.uploadedAt)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <File size={14} />
+                              {material.fileName.split('.').pop().toUpperCase()} file
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <a
+                          href={material.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+                        >
+                          <FileText size={16} />
+                          View
+                        </a>
+                        
+                        {material.fileUrl && (
+                          <button
+                            onClick={() => handleDownload(material.fileUrl, material.fileName)}
+                            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 rounded-lg font-medium transition-all transform hover:scale-105 inline-flex items-center gap-2"
+                          >
+                            <Download size={16} />
+                            Download
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-gray-200 p-4 bg-gray-50">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">
+                  All materials are provided by the course mentor
+                </span>
+                <button
+                  onClick={() => setShowMaterialsModal(false)}
+                  className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
