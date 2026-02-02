@@ -22,6 +22,7 @@ import OverlayHeroBanner from "../newone/SplitHero";
 import FullScreenHero1 from "../newone/SplitHero";
 import WebsiteCertificate from "./websiteCertificate";
 import HeroPage from "../admin/HeroPage";
+import PopupBanner from "./PopupBanner";
 
 const HomePage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -60,6 +61,7 @@ const HomePage = () => {
 
   return (
     <>
+          <PopupBanner />
       <Header />
 
 
