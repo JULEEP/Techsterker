@@ -21,7 +21,7 @@ const GuestHeader = ({ onLogin }) => {
   const [loginType, setLoginType] = useState(null);
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('Certified Programs');
+  const [selectedCategory, setSelectedCategory] = useState('Job Oriented Courses');
   const [isScrolled, setIsScrolled] = useState(false);
   const [screenSize, setScreenSize] = useState('desktop');
   const [categories, setCategories] = useState([]);
@@ -114,7 +114,7 @@ const GuestHeader = ({ onLogin }) => {
           setCourses(data.data);
 
           // Define allowed categories
-          const allowedCategories = ['Certified Programs', 'Elite Courses', 'Healthcare Courses'];
+          const allowedCategories = ['Job Oriented Courses', 'IT Courses', 'Non-IT Courses', 'Healthcare Courses'];
 
           // Filter categories to only include allowed ones
           const uniqueCategories = [...new Set(data.data.map(course => course.category))]
@@ -137,13 +137,13 @@ const GuestHeader = ({ onLogin }) => {
           setCategoryCourses(grouped);
         } else {
           setCourses([]);
-          setCategories(['Certified Programs', 'Elite Courses', 'Healthcare Courses', 'View All']);
+          setCategories(['Job Oriented Courses', 'IT Courses', 'Non-IT Courses', 'Healthcare Courses', 'View All']);
         }
       })
       .catch((err) => {
         console.error(err);
         setCourses([]);
-        setCategories(['Certified Programs', 'Elite Courses', 'Healthcare Courses', 'View All']);
+        setCategories(['Job Oriented Courses', 'IT Courses', 'Non-IT Courses', 'Healthcare Courses', 'View All']);
       });
   }, []);
 
@@ -530,14 +530,32 @@ const GuestHeader = ({ onLogin }) => {
 
   const MegaMenu = () => (
     <div
-      ref={megaMenuRef}
-      className={`absolute ${screenSize === 'tablet' ? 'left-0' : 'left-1/2 transform -translate-x-1/2'} 
-        ${screenSize === 'mobile-small' ? 'w-[98vw]' : screenSize === 'mobile' ? 'w-[96vw]' : 'w-[95vw]'} 
-        ${screenSize === 'desktop-large' ? 'max-w-[1000px]' : screenSize === 'desktop' ? 'max-w-[900px]' : screenSize === 'laptop' ? 'max-w-[800px]' : 'max-w-[700px]'} 
-        bg-white rounded-lg shadow-xl z-50 max-h-[80vh] overflow-y-auto top-full mt-1`}
-      onMouseEnter={handleCoursesMouseEnter}
-      onMouseLeave={handleCoursesMouseLeave}
-    >
+  ref={megaMenuRef}
+  className={`mega-menu-scroll absolute ${
+    screenSize === 'tablet'
+      ? 'left-0'
+      : 'left-1/2 transform -translate-x-1/2'
+  } 
+  ${screenSize === 'mobile-small'
+    ? 'w-[98vw]'
+    : screenSize === 'mobile'
+    ? 'w-[96vw]'
+    : 'w-[95vw]'} 
+  ${
+    screenSize === 'desktop-large'
+      ? 'max-w-[1000px]'
+      : screenSize === 'desktop'
+      ? 'max-w-[900px]'
+      : screenSize === 'laptop'
+      ? 'max-w-[800px]'
+      : 'max-w-[700px]'
+  } 
+  bg-white rounded-lg shadow-xl z-50 top-full mt-1
+  overflow-y-auto max-h-[80vh]`}
+  onMouseEnter={handleCoursesMouseEnter}
+  onMouseLeave={handleCoursesMouseLeave}
+>
+
       <div className={`flex flex-col ${screenSize === 'mobile-small' ? 'p-2' : screenSize === 'mobile' ? 'p-3' : 'p-4'} ${screenSize === 'laptop' || screenSize === 'desktop' || screenSize === 'desktop-large' ? 'md:flex-row' : ''} ${screenSize === 'desktop' || screenSize === 'desktop-large' ? 'md:p-6' : 'md:p-5'}`}>
         <div className={`flex-none w-full ${screenSize === 'laptop' || screenSize === 'desktop' || screenSize === 'desktop-large' ? 'md:w-1/4 md:pr-4 md:border-r' : ''} border-gray-200 ${screenSize === 'laptop' || screenSize === 'desktop' || screenSize === 'desktop-large' ? 'mb-4 md:mb-0' : 'mb-4'}`}>
           <h6 className={`font-bold text-[#a51d34] mb-3 ${screenSize === 'mobile-small' ? 'text-xs' : screenSize === 'mobile' || screenSize === 'mobile-large' ? 'text-sm' : 'text-base'}`}>Course Categories</h6>
@@ -576,24 +594,60 @@ const GuestHeader = ({ onLogin }) => {
             {categoryCourses[selectedCategory]?.slice(0, screenSize === 'desktop-large' ? 12 : 10).map((course) => (
               <div key={course._id} className="cursor-pointer">
                 <div
-                  className={`flex gap-2 ${screenSize === 'mobile-small' ? 'p-2' : 'p-3'} rounded-lg transition-colors hover:bg-[#f8d7da] group`}
+                  className={`flex gap-2 ${screenSize === 'mobile-small' ? 'p-2' : 'p-3'
+                    } rounded-lg cursor-pointer transition-all duration-300 
+  hover:bg-[#a51d34]/5 hover:shadow-[0_4px_14px_rgba(165,29,52,0.25)] 
+  hover:-translate-y-[1px] group`}
                 >
-                  <div className={`flex-shrink-0 p-1 rounded-circle ${screenSize === 'mobile-small' ? 'w-6 h-6' : screenSize === 'mobile' ? 'w-7 h-7' : screenSize === 'mobile-large' ? 'w-8 h-8' : 'w-10 h-10'} bg-white-500 rounded-lg flex items-center justify-center overflow-hidden`}>
-                    <img src={course.logoImage} alt={course.name} className="w-full h-full object-cover img-fluid  rounded-square" />
+                  <div
+                    className={`flex-shrink-0 p-1 ${screenSize === 'mobile-small'
+                        ? 'w-6 h-6'
+                        : screenSize === 'mobile'
+                          ? 'w-7 h-7'
+                          : screenSize === 'mobile-large'
+                            ? 'w-8 h-8'
+                            : 'w-10 h-10'
+                      } bg-white rounded-lg flex items-center justify-center overflow-hidden 
+    transition-all duration-300 group-hover:ring-1 group-hover:ring-[#a51d34]/40`}
+                  >
+                    <img
+                      src={course.logoImage}
+                      alt={course.name}
+                      className="w-full h-full object-cover img-fluid rounded-square"
+                    />
                   </div>
-                  <div className="flex-grow overflow-hidden" onClick={() => {
-                    handleCourseClick(course._id);
-                    setIsMobileMenuOpen(false);
-                  }}>
-                    <div className={`font-medium ${screenSize === 'mobile-small' ? 'text-xs' : screenSize === 'mobile' || screenSize === 'mobile-large' ? 'text-sm' : 'text-sm md:text-base'} whitespace-nowrap overflow-hidden text-ellipsis`}>{course.name}</div>
-                    <div className={`flex items-center gap-1 text-gray-600 ${screenSize === 'mobile-small' ? 'text-xs' : 'text-xs'} mt-1`}>
+
+                  <div
+                    className="flex-grow overflow-hidden transition-colors duration-300 
+    group-hover:text-[#a51d34]"
+                    onClick={() => {
+                      handleCourseClick(course._id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    <div
+                      className={`font-medium ${screenSize === 'mobile-small'
+                          ? 'text-xs'
+                          : screenSize === 'mobile' || screenSize === 'mobile-large'
+                            ? 'text-sm'
+                            : 'text-sm md:text-base'
+                        } whitespace-nowrap overflow-hidden text-ellipsis`}
+                    >
+                      {course.name}
+                    </div>
+
+                    <div
+                      className={`flex items-center gap-1 ${screenSize === 'mobile-small' ? 'text-xs' : 'text-xs'
+                        } mt-1 transition-colors duration-300 
+      group-hover:text-[#a51d34]/80`}
+                    >
                       <span>{course.category || 'N/A'}</span>
                       <span>•</span>
                       <span>{course.duration || 0}</span>
                     </div>
                   </div>
-
                 </div>
+
               </div>
             ))}
           </div>
@@ -1139,16 +1193,16 @@ const GuestHeader = ({ onLogin }) => {
                     src="/logo/hicaplogo.png"
                     alt="Logo"
                     className={`${screenSize === "mobile-small"
-                        ? "w-14"
-                        : screenSize === "mobile"
-                          ? "w-16"
-                          : screenSize === "mobile-large"
-                            ? "w-18 sm:w-20"
-                            : screenSize === "tablet"
-                              ? "w-22 md:w-24"
-                              : screenSize === "laptop"
-                                ? "w-24 lg:w-26"
-                                : "w-26 lg:w-28"
+                      ? "w-14"
+                      : screenSize === "mobile"
+                        ? "w-16"
+                        : screenSize === "mobile-large"
+                          ? "w-18 sm:w-20"
+                          : screenSize === "tablet"
+                            ? "w-22 md:w-24"
+                            : screenSize === "laptop"
+                              ? "w-24 lg:w-26"
+                              : "w-26 lg:w-28"
                       } h-auto object-contain`}
                   />
                 </div>

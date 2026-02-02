@@ -237,3 +237,49 @@ html, body {
   width: 100%;
 }
 
+
+
+/* =========================
+   FORCE MAROON SCROLLBAR
+   ========================= */
+
+/* Chrome / Edge / Safari */
+.mega-menu-scroll::-webkit-scrollbar {
+  width: 10px !important;
+}
+
+.mega-menu-scroll::-webkit-scrollbar-track {
+  background: rgba(165, 29, 52, 0.12) !important;
+  border-radius: 10px;
+}
+
+.mega-menu-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    #a51d34,
+    #d32f2f
+  ) !important;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+.mega-menu-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    #8f182c,
+    #b71c1c
+  ) !important;
+}
+
+/* Firefox */
+.mega-menu-scroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: #a51d34 rgba(165, 29, 52, 0.12) !important;
+}
+
+/* macOS: force visible scrollbar */
+@supports (-webkit-touch-callout: none) {
+  .mega-menu-scroll {
+    scrollbar-gutter: stable both-edges;
+  }
+}
