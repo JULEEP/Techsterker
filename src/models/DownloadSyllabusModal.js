@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button, Form, Spinner, InputGroup } from "react-bootstrap";
+import { Modal, Spinner, InputGroup, Form } from "react-bootstrap";
 import { FaDownload } from "react-icons/fa";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -16,6 +16,7 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
   const [pdfUrl, setPdfUrl] = useState("");
   const [fileName, setFileName] = useState("");
   const [confirmationResult, setConfirmationResult] = useState(null);
+  const [downloadId, setDownloadId] = useState(null); // 🔥 backend id
 
   /* ---------------- DOWNLOAD PDF ---------------- */
   const handleDownload = async (url, filename = "document.pdf") => {
@@ -75,13 +76,31 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
       const course = await fetchCourseDetails();
       if (!course) return;
 
-      // 🔥 Clear old verifier (React-safe)
+      // 🔹 CALL BACKEND CREATE API
+      const createRes = await axios.post(
+        "https://api.techsterker.com/api/tasks/createDownload",
+        {
+          name,
+          phone,
+          courseId,
+          pdfUrl: course.pdf,
+        }
+      );
+
+      const createdId = createRes.data?.data?._id;
+      if (!createdId) {
+        Swal.fire("Error", "Failed to create download record", "error");
+        return;
+      }
+
+      setDownloadId(createdId);
+
+      // 🔥 Firebase reCAPTCHA
       if (window.recaptchaVerifier) {
         window.recaptchaVerifier.clear();
         window.recaptchaVerifier = null;
       }
 
-      // ✅ CORRECT Firebase v9 constructor
       window.recaptchaVerifier = new RecaptchaVerifier(
         auth,
         "recaptcha-container",
@@ -100,7 +119,7 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
       Swal.fire("Success", "OTP sent successfully", "success");
     } catch (error) {
       console.error(error);
-      Swal.fire("Error", error.message, "error");
+      Swal.fire("Error", error.message || "OTP failed", "error");
     } finally {
       setLoading(false);
     }
@@ -112,7 +131,14 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
 
     try {
       setLoading(true);
+
+      // 🔹 Firebase OTP verify
       await confirmationResult.confirm(otp);
+
+      // 🔹 CALL BACKEND VERIFY API
+      await axios.put(
+        `https://api.techsterker.com/api/tasks/verify/${downloadId}`
+      );
 
       Swal.fire("Verified", "OTP verified! Downloading…", "success");
 
@@ -123,7 +149,9 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
       handleClose();
       setOtp("");
       setOtpSent(false);
-    } catch {
+      setDownloadId(null);
+    } catch (error) {
+      console.error(error);
       Swal.fire("Error", "Invalid OTP", "error");
     } finally {
       setLoading(false);
@@ -163,13 +191,14 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
               </InputGroup>
             </Form.Group>
 
-            <Button
-              className="w-100"
+            <button
+              type="button"
+              className="w-100 btn btn-lg bg-meroon"
               onClick={sendOtp}
               disabled={loading}
             >
               {loading ? <Spinner size="sm" /> : "Send OTP"}
-            </Button>
+            </button>
           </Form>
         ) : (
           <Form>
@@ -184,13 +213,14 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
               />
             </Form.Group>
 
-            <Button
-              className="w-100"
+            <button
+              type="button"
+              className="w-100 btn btn-lg bg-meroon"
               onClick={verifyOtp}
               disabled={loading}
             >
               {loading ? <Spinner size="sm" /> : "Verify & Download"}
-            </Button>
+            </button>
           </Form>
         )}
 
