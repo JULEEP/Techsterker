@@ -78,7 +78,7 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
 
       // 🔹 CALL BACKEND CREATE API
       const createRes = await axios.post(
-        "https://api.techsterker.com/api/tasks/createDownload",
+        "https://api.techsterker.com/api/our-mentor/createDownload",
         {
           name,
           phone,
@@ -137,7 +137,7 @@ const DownloadSyllabusModal = ({ show, handleClose, courseId }) => {
 
       // 🔹 CALL BACKEND VERIFY API
       await axios.put(
-        `https://api.techsterker.com/api/tasks/verify/${downloadId}`
+        `https://api.techsterker.com/api/our-mentor/verify/${downloadId}`
       );
 
       Swal.fire("Verified", "OTP verified! Downloading…", "success");
