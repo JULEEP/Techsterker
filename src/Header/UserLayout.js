@@ -42,6 +42,16 @@ const UserLayout = ({ user, onLogout }) => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
   return (
     <div className="d-flex bg-light" style={{ minHeight: '100vh' }}>
       {/* Sidebar */}
@@ -83,25 +93,38 @@ const UserLayout = ({ user, onLogout }) => {
                 <i className="fas fa-bars"></i>
               </button>
             )}
-            <div className="ms-auto text-white text-end">
+            <div className="ms-auto d-flex align-items-center gap-3 text-white">
+
+              {/* FULLSCREEN BUTTON */}
+              <button
+                className="btn btn-outline-light"
+                onClick={toggleFullscreen}
+                title="Toggle Fullscreen"
+              >
+                <i className="fas fa-expand"></i>
+              </button>
+
+              {/* LOGO */}
               <img
                 src="/logo/lightlogo.png"
                 alt="HiCap Logo"
                 className="max-h-8 md:max-h-10 lg:max-h-11 w-auto"
               />
+
             </div>
+
           </div>
         </nav>
 
         {/* Page Content - Adjusted top padding */}
-        <div className="p-3 p-md-4" style={{ 
+        <div className="p-3 p-md-4" style={{
           minHeight: 'calc(100vh - 70px)', // Adjusted for navbar height
           background: '#f8f9fa'
         }}>
           <Outlet />
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

@@ -152,8 +152,15 @@ const CourseEnquiryModal = ({ show, handleClose, prefillCourse = '' }) => {
             placeholder="Your Phone Number*"
             className="mb-3"
             value={formData.phone}
-            onChange={handleChange}
+            inputMode="numeric"
+            pattern="[0-9]{10}"      // must be exactly 10 digits
+            maxLength={10}
             required
+            onChange={(e) => {
+              // keep digits only and limit to 10
+              const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+              setFormData({ ...formData, phone: digits });
+            }}
           />
           <Form.Control
             type="email"

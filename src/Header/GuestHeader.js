@@ -1212,7 +1212,7 @@ const GuestHeader = ({ onLogin }) => {
                 </h2>
 
                 {/* 2 Column Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
 
                   {/* Student Login */}
                   <button
@@ -1223,12 +1223,12 @@ const GuestHeader = ({ onLogin }) => {
                   </button>
 
                   {/* Institute Login */}
-                  <button
+                  {/* <button
                     className="w-full py-2 border border-[#a51d34] text-[#a51d34] rounded-md font-semibold hover:bg-[#a51d34] hover:text-white transition"
                     onClick={() => window.open("https://www.techsterker.com", "_blank")}
                   >
                     Institute Login
-                  </button>
+                  </button> */}
 
                 </div>
               </div>

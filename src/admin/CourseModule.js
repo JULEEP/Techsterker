@@ -1597,6 +1597,7 @@ const CourseModuleInterface = () => {
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
+                   
                   {section.icon}
                   <span>{section.label}</span>
                 </button>

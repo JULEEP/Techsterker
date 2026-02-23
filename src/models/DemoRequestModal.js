@@ -132,8 +132,15 @@ const DemoRequestModal = ({ show, handleClose }) => {
             placeholder="Your Phone Number*"
             className="mb-3"
             value={formData.phone}
-            onChange={handleChange}
+            inputMode="numeric"            // mobile numeric keyboard
+            pattern="[0-9]{10}"            // HTML validation → exactly 10 digits
+            maxLength={10}
             required
+            onChange={(e) => {
+              // allow numbers only
+              const value = e.target.value.replace(/\D/g, "");
+              setFormData({ ...formData, phone: value });
+            }}
           />
           <Form.Control
             type="email"

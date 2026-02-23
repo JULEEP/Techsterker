@@ -52,7 +52,6 @@ const BlogDetails = () => {
     return (
         <>
             <Header />
-
             {/* HERO */}
             <div
                 style={{
@@ -62,6 +61,25 @@ const BlogDetails = () => {
                     padding: "0 20px",
                 }}
             >
+
+                {/* RESPONSIVE BACK BUTTON */}
+                <button
+                    onClick={() => navigate(-1)}
+                    style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#a51d34",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginBottom: "20px",
+                    }}
+                >
+                    <FaArrowLeft /> Back to Blogs
+                </button>
                 <div
                     style={{
                         borderRadius: "16px",
@@ -89,7 +107,7 @@ const BlogDetails = () => {
                 }}
             >
                 {/* BACK */}
-                <button
+                {/* <button
                     onClick={() => navigate(-1)}
                     style={{
                         background: "transparent",
@@ -104,7 +122,7 @@ const BlogDetails = () => {
                     }}
                 >
                     <FaArrowLeft /> Back
-                </button>
+                </button> */}
 
                 {/* TITLE */}
                 <h1

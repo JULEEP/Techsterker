@@ -26,7 +26,7 @@ const UpCommingBatches = () => {
             duration: b.duration,
             status: b.status,
           }));
-          
+
           setAllBatches(batches);
           setFilteredBatches(batches.filter(batch => batch.status === "Upcoming"));
         }
@@ -43,15 +43,16 @@ const UpCommingBatches = () => {
   }, []);
 
   const handleFilterClick = (status) => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setActiveFilter(status);
     let filtered = [];
-    
+
     if (status === "Fast Track Course") {
       filtered = allBatches.filter(batch => batch.status === "Fast Track Course");
     } else {
       filtered = allBatches.filter(batch => batch.status === status);
     }
-    
+
     setFilteredBatches(filtered);
   };
 
@@ -71,7 +72,7 @@ const UpCommingBatches = () => {
       Ongoing: { gradient: "bg-gradient-to-r from-green-500 to-emerald-500", text: "Live Now" },
       "Fast Track Course": { gradient: "bg-gradient-to-r from-orange-500 to-red-500", text: "Fast Track Course" }
     }[status] || { gradient: "bg-gradient-to-r from-blue-500 to-cyan-500", text: status };
-    
+
     return (
       <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-semibold text-white shadow-md ${config.gradient}`}>
         {config.text}
@@ -144,7 +145,6 @@ const UpCommingBatches = () => {
   return (
     <>
       <Header />
-      
       {/* Hero Section with Shadow */}
       <div className="relative overflow-hidden bg-gradient-to-r from-red-600 via-red-500 to-orange-500 pt-32 pb-16 shadow-xl">
         <div className="absolute inset-0 bg-black opacity-10"></div>
@@ -157,28 +157,26 @@ const UpCommingBatches = () => {
       {/* Main Content with Inner Shadow */}
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-12 shadow-inner">
         <div className="max-w-7xl mx-auto px-4">
-          
+
           {/* Filter Tabs with Shadows */}
           <div className="mb-12">
             <div className="flex flex-wrap gap-3 justify-center">
               {allStatuses.map((status) => {
                 const batchCount = allBatches.filter(b => b.status === status).length;
                 const isActive = activeFilter === status;
-                
+
                 return (
                   <button
                     key={status}
                     onClick={() => handleFilterClick(status)}
-                    className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
-                      isActive
+                    className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${isActive
                         ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-xl"
                         : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-md"
-                    }`}
+                      }`}
                   >
                     {status}
-                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs shadow-sm ${
-                      isActive ? "bg-white/30" : "bg-gray-100"
-                    }`}>
+                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs shadow-sm ${isActive ? "bg-white/30" : "bg-gray-100"
+                      }`}>
                       {batchCount}
                     </span>
                   </button>
@@ -197,18 +195,18 @@ const UpCommingBatches = () => {
                 >
                   {/* Top Gradient Bar with Shadow */}
                   <div className={`h-2 shadow-inner ${getCourseGradient(batch.courseName)}`}></div>
-                  
+
                   <div className="p-6">
                     {/* Status Badge with Shadow */}
                     <div className="mb-5">
                       {getStatusBadge(batch.status)}
                     </div>
-                    
+
                     {/* Course Name with Text Shadow */}
                     <h3 className="text-xl font-bold text-gray-900 mb-6 drop-shadow-sm">
                       {batch.courseName}
                     </h3>
-                    
+
                     {/* Info Items with Card-like Shadows */}
                     <div className="space-y-5">
                       {/* Start Date Card */}
@@ -223,7 +221,7 @@ const UpCommingBatches = () => {
                           <div className="font-semibold text-gray-900">{formatDate(batch.date)}</div>
                         </div>
                       </div>
-                      
+
                       {/* Schedule Card */}
                       <div className="flex items-center bg-gradient-to-r from-green-50 to-white p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
                         <div className="w-10 h-10 bg-gradient-to-r from-green-100 to-green-200 rounded-lg flex items-center justify-center mr-3 shadow-sm">
@@ -236,7 +234,7 @@ const UpCommingBatches = () => {
                           <div className="font-semibold text-gray-900">{batch.timing}</div>
                         </div>
                       </div>
-                      
+
                       {/* Duration Card */}
                       <div className="flex items-center bg-gradient-to-r from-purple-50 to-white p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
                         <div className="w-10 h-10 bg-gradient-to-r from-purple-100 to-purple-200 rounded-lg flex items-center justify-center mr-3 shadow-sm">
@@ -261,15 +259,15 @@ const UpCommingBatches = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  
+
                   <h3 className="text-xl font-bold text-gray-900 mb-3 drop-shadow-sm">
                     {`No ${activeFilter} Courses Available`}
                   </h3>
-                  
+
                   <p className="text-gray-600 mb-8">
                     New courses will be announced soon. Stay tuned for updates.
                   </p>
-                  
+
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
                       onClick={() => window.location.href = "whatsapp://call?phone=919000239871"}
@@ -307,12 +305,12 @@ const UpCommingBatches = () => {
                 >
                   Enroll Now
                 </button>
-                <button
+                {/* <button
                   onClick={() => window.location.href = "whatsapp://call?phone=919000239871"}
                   className="px-6 py-2.5 bg-gradient-to-r from-white to-gray-50 text-red-600 font-medium rounded-lg border border-red-600 hover:bg-red-50 transition-all duration-300 shadow-md hover:shadow-lg"
                 >
                   Get Details
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

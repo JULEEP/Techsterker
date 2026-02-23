@@ -42,7 +42,7 @@ const PaymentOverview = () => {
 
     setInvoiceLoading(true);
     try {
-      const response = await axios.get(`http://localhost:5001/api/userinvoice/${UserId}`);
+      const response = await axios.get(`https://api.techsterker.com/api/userinvoice/${UserId}`);
       if (response.data.success) {
         setInvoices(response.data.data || []);
         setShowInvoices(true);

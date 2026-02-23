@@ -34,11 +34,11 @@ const ProfilePage = () => {
     try {
       setLoading(true);
       const response = await axios.get(`https://api.techsterker.com/api/myprofile/${userId}`);
-      
+
       if (response.data.success) {
         const profile = response.data.profile;
         setProfileData(profile);
-        
+
         // Set form data for editing
         setFormData({
           name: profile.name || '',
@@ -84,7 +84,7 @@ const ProfilePage = () => {
     }
 
     setSelectedImageFile(file);
-    
+
     // Show preview immediately
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -103,7 +103,7 @@ const ProfilePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!formData.firstName || !formData.email || !formData.mobile) {
       toast.error('Please fill in all required fields');
@@ -111,11 +111,11 @@ const ProfilePage = () => {
     }
 
     setSaving(true);
-    
+
     try {
       // Create FormData for multipart upload
       const formDataToSend = new FormData();
-      
+
       // Add text fields
       formDataToSend.append('firstName', formData.firstName);
       formDataToSend.append('lastName', formData.lastName || '');
@@ -127,7 +127,7 @@ const ProfilePage = () => {
       formDataToSend.append('company', formData.company || '');
       formDataToSend.append('role', formData.role || '');
       formDataToSend.append('experience', formData.experience || '');
-      
+
       // Add image file if selected
       if (selectedImageFile) {
         formDataToSend.append('profileImage', selectedImageFile);
@@ -135,7 +135,7 @@ const ProfilePage = () => {
 
       // Call the update API
       const response = await axios.put(
-        `http://localhost:5001/api/userregister/${userId}`,
+        `https://api.techsterker.com/api/userregister/${userId}`,
         formDataToSend,
         {
           headers: {
@@ -146,24 +146,24 @@ const ProfilePage = () => {
 
       if (response.data.success) {
         toast.success('Profile updated successfully!');
-        
+
         // Update local state with new data
         const updatedProfile = {
           ...profileData,
           ...response.data.data,
           name: `${formData.firstName} ${formData.lastName}`.trim()
         };
-        
+
         setProfileData(updatedProfile);
-        
+
         // Update profile image if it was uploaded
         if (response.data.data.profileImage) {
           setProfileImage(response.data.data.profileImage);
         }
-        
+
         // Clear selected image file
         setSelectedImageFile(null);
-        
+
         // Update user in sessionStorage
         const updatedUser = {
           ...user,
@@ -171,9 +171,9 @@ const ProfilePage = () => {
           email: formData.email
         };
         sessionStorage.setItem('user', JSON.stringify(updatedUser));
-        
+
         setIsEditing(false);
-        
+
         // Refresh profile data to get latest from server
         fetchProfileData();
       } else {
@@ -181,7 +181,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      
+
       if (error.response) {
         toast.error(error.response.data.message || 'Failed to update profile');
       } else if (error.request) {
@@ -207,7 +207,7 @@ const ProfilePage = () => {
   // Download ID card as image
   const downloadIDCard = async () => {
     if (!idCardRef.current) return;
-    
+
     setDownloading(true);
     try {
       const canvas = await html2canvas(idCardRef.current, {
@@ -216,7 +216,7 @@ const ProfilePage = () => {
         useCORS: true,
         logging: false
       });
-      
+
       const image = canvas.toDataURL('image/png', 1.0);
       const link = document.createElement('a');
       link.href = image;
@@ -224,7 +224,7 @@ const ProfilePage = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       toast.success('ID Card downloaded successfully!');
     } catch (error) {
       console.error('Error downloading ID card:', error);
@@ -250,7 +250,7 @@ const ProfilePage = () => {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
         <div className="text-center">
           <h3 className="text-2xl font-bold text-gray-800 mb-4">Profile not found</h3>
-          <button 
+          <button
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
             onClick={() => navigate('/dashboard')}
           >
@@ -265,7 +265,7 @@ const ProfilePage = () => {
     <>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
         <ToastContainer position="top-right" autoClose={3000} />
-        
+
         {/* Header */}
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -427,8 +427,15 @@ const ProfilePage = () => {
                           type="tel"
                           name="mobile"
                           value={formData.mobile}
-                          onChange={handleInputChange}
+                          inputMode="numeric"
+                          pattern="[0-9]{10}"        // must be exactly 10 digits
+                          maxLength={10}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                            setFormData({ ...formData, mobile: digits });
+                          }}
                           className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm sm:text-base"
+                          placeholder="Enter 10 digit mobile number"
                           required
                         />
                       </div>
@@ -512,15 +519,15 @@ const ProfilePage = () => {
               {/* ID Card Section - Below Profile Info */}
               <div className="bg-white rounded-2xl shadow-xl p-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-6">Your ID Card</h3>
-                
+
                 {/* ID Card Container - Compact Design */}
                 <div ref={idCardRef} className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden max-w-xs mx-auto shadow-xl">
                   {/* Top Section with Logo */}
                   <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-20 flex items-center justify-center">
                     <div className="text-center">
-                      <img 
-                        src="/logo/lightlogo.png" 
-                        alt="TechsterKer Logo" 
+                      <img
+                        src="/logo/lightlogo.png"
+                        alt="TechsterKer Logo"
                         className="h-6 w-auto mx-auto mb-1"
                         onError={(e) => {
                           e.target.onerror = null;
@@ -534,79 +541,79 @@ const ProfilePage = () => {
                   {/* Main Content */}
                   <div className="p-4">
                     {/* Profile Image and Name Section */}
-                  {/* Profile Image and Name Section */}
-<div className="flex items-start gap-3 mb-4">
-  <div className="w-16 h-16 rounded-full border-2 border-blue-500 bg-gradient-to-r from-blue-400 to-purple-400 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-    {profileImage ? (
-      <img
-        src={profileImage}
-        alt={profileData.name}
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          e.target.onerror = null;
-          e.target.src = `https://ui-avatars.com/api/?name=${profileData.name}&background=8b5cf6&color=fff&size=128`;
-        }}
-      />
-    ) : (
-      <span className="text-base font-bold text-white">
-        {getInitials(profileData.name)}
-      </span>
-    )}
-  </div>
-  <div className="flex-1 min-w-0">
-    <h2 className="text-lg font-bold text-gray-800 leading-snug mb-1 min-h-[2.5rem] flex items-center">
-      {profileData.name}
-    </h2>
-    <div className="text-blue-600 font-semibold text-sm truncate">{profileData.course || "Student"}</div>
-  </div>
-</div>
+                    {/* Profile Image and Name Section */}
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-16 h-16 rounded-full border-2 border-blue-500 bg-gradient-to-r from-blue-400 to-purple-400 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {profileImage ? (
+                          <img
+                            src={profileImage}
+                            alt={profileData.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = `https://ui-avatars.com/api/?name=${profileData.name}&background=8b5cf6&color=fff&size=128`;
+                            }}
+                          />
+                        ) : (
+                          <span className="text-base font-bold text-white">
+                            {getInitials(profileData.name)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-lg font-bold text-gray-800 leading-snug mb-1 min-h-[2.5rem] flex items-center">
+                          {profileData.name}
+                        </h2>
+                        <div className="text-blue-600 font-semibold text-sm truncate">{profileData.course || "Student"}</div>
+                      </div>
+                    </div>
 
-{/* Essential Information */}
-<div className="space-y-3 mb-4">
-  <div className="flex items-start">
-    <div className="w-6 pt-0.5 flex-shrink-0">
-      <svg className="w-3 h-3 text-blue-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-      </svg>
-    </div>
-    <div className="flex-1 ml-2 min-w-0">
-      <div className="text-xs text-gray-500 mb-0.5">Email</div>
-      <div className="text-gray-800 font-medium text-xs break-words leading-tight min-h-[2rem] flex items-center">
-        {profileData.email}
-      </div>
-    </div>
-  </div>
-  
-  <div className="flex items-center">
-    <div className="w-6 flex-shrink-0">
-      <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-      </svg>
-    </div>
-    <div className="flex-1 ml-2">
-      <div className="text-xs text-gray-500 mb-0.5">Mobile</div>
-      <div className="text-gray-800 font-medium text-xs">{profileData.mobile || profileData.phoneNumber || 'N/A'}</div>
-    </div>
-  </div>
-  
-  <div className="flex items-center">
-    <div className="w-6 flex-shrink-0">
-      <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-      </svg>
-    </div>
-    <div className="flex-1 ml-2">
-      <div className="text-xs text-gray-500 mb-0.5">User ID</div>
-      <div className="text-gray-800 font-medium text-xs">{profileData.userId}</div>
-    </div>
-  </div>
-</div>
+                    {/* Essential Information */}
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-start">
+                        <div className="w-6 pt-0.5 flex-shrink-0">
+                          <svg className="w-3 h-3 text-blue-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 ml-2 min-w-0">
+                          <div className="text-xs text-gray-500 mb-0.5">Email</div>
+                          <div className="text-gray-800 font-medium text-xs break-words leading-tight min-h-[2rem] flex items-center">
+                            {profileData.email}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <div className="w-6 flex-shrink-0">
+                          <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 ml-2">
+                          <div className="text-xs text-gray-500 mb-0.5">Mobile</div>
+                          <div className="text-gray-800 font-medium text-xs">{profileData.mobile || profileData.phoneNumber || 'N/A'}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <div className="w-6 flex-shrink-0">
+                          <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 ml-2">
+                          <div className="text-xs text-gray-500 mb-0.5">User ID</div>
+                          <div className="text-gray-800 font-medium text-xs">{profileData.userId}</div>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* ID Card Number */}
                     <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-2 text-center">
                       <div className="text-xs text-gray-500 mb-1">ID Card Number</div>
-                          <div className="text-gray-800 font-medium text-xs">{profileData.userId}</div>
+                      <div className="text-gray-800 font-medium text-xs">{profileData.userId}</div>
                     </div>
                   </div>
 
@@ -644,10 +651,10 @@ const ProfilePage = () => {
               {/* Quick Actions */}
               <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h3>
-                
+
                 <div className="space-y-4">
                   <button
-                    onClick={() => navigate('/courses')}
+                    onClick={() => navigate('/dashboard/browsecourses')}
                     className="w-full bg-gradient-to-r from-green-50 to-emerald-100 hover:from-green-100 hover:to-emerald-200 text-green-700 px-5 py-3.5 rounded-xl font-semibold border border-green-200 transition-all flex items-center justify-between group"
                   >
                     <div className="flex items-center">
@@ -680,7 +687,7 @@ const ProfilePage = () => {
                     </svg>
                   </button>
 
-                  <button
+                  {/* <button
                     onClick={() => fileInputRef.current?.click()}
                     className="w-full bg-gradient-to-r from-purple-50 to-pink-100 hover:from-purple-100 hover:to-pink-200 text-purple-700 px-5 py-3.5 rounded-xl font-semibold border border-purple-200 transition-all flex items-center justify-between group"
                   >
@@ -695,7 +702,7 @@ const ProfilePage = () => {
                     <svg className="w-5 h-5 opacity-0 group-hover:opacity-100 transform group-hover:translate-x-1 transition-all" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
-                  </button>
+                  </button> */}
 
                   <button
                     onClick={() => {

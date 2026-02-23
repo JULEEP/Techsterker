@@ -8,6 +8,34 @@ import { useNavigate } from "react-router-dom";
 const BlogPage = () => {
   const navigate = useNavigate();
 
+
+
+  // SHARE
+  const handleShare = async (slug) => {
+  const blog = blogData.find((item) => item.slug === slug);
+
+  // create blog detail URL dynamically
+  const shareUrl = `${window.location.origin}/blog/${slug}`;
+
+  const shareData = {
+    title: blog.title,
+    text: blog.description,
+    url: shareUrl,
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+    } catch (err) {
+      console.error("Share canceled", err);
+    }
+  } else {
+    navigator.clipboard.writeText(shareUrl);
+    alert("Blog link copied to clipboard!");
+  }
+};
+
+
   return (
     <>
       <Header />
@@ -127,6 +155,7 @@ const BlogPage = () => {
                   fontSize: "20px",
                 }}
                 title="Share this blog"
+                onClick={()=>handleShare(blog.slug)}
               >
                 <FaShareAlt style={{ color: "#a51d34" }} />
               </div>
