@@ -202,7 +202,7 @@ const UserSidebar = ({ isCollapsed, onToggleCollapse, isMobile }) => {
               {loading ? 'Loading...' : getUserEmail()}
             </p>
             <div className="mt-2">
-              <span className="badge bg-white text-purple px-3 py-1 rounded-pill" style={{ fontSize: '0.75rem' }}>
+              <span className="badge bg-white px-3 py-1 rounded-pill" style={{ color: '#8a2be2', fontSize: '0.75rem' }}>
                 {loading ? 'Loading...' : getUserID()}
               </span>
             </div>

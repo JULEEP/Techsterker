@@ -42,13 +42,22 @@ const CourseModuleInterface = () => {
   const [selectedLiveClass, setSelectedLiveClass] = useState(null);
   const [liveMaterialsModalOpen, setLiveMaterialsModalOpen] = useState(false);
 
+  // Live Class Videos States
+  const [liveClassVideos, setLiveClassVideos] = useState([]);
+  const [videosLoading, setVideosLoading] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videoError, setVideoError] = useState(null);
+
+  // Unique courses extracted from live class videos
+  const [availableCourses, setAvailableCourses] = useState([]);
+
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const userId = user.id;
   const userName = user.name || 'Student';
 
-  // Fetch data from API - MULTIPLE FALLBACK URLs
+  // Fetch live class videos from API
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchLiveClassVideos = async () => {
       if (!userId) {
         setError('User not found. Please log in again.');
         setLoading(false);
@@ -57,211 +66,185 @@ const CourseModuleInterface = () => {
 
       try {
         setLoading(true);
+        setVideoError(null);
         
-        // Try multiple API endpoints
-        const apiEndpoints = [
-          `https://api.techsterker.com/api/course-modules/user/${userId}`,
-          `https://api.techsterker.com/api/courses/user/${userId}`,
-          `https://api.techsterker.com/api/user/courses/${userId}`,
-          `https://api.techsterker.com/api/user/${userId}/courses`
-        ];
-
-        let data = null;
-        let apiUsed = '';
-
-        // Try each endpoint until one works
-        for (const endpoint of apiEndpoints) {
-          try {
-            console.log(`Trying API endpoint: ${endpoint}`);
-            const response = await fetch(endpoint);
-            
-            if (response.ok) {
-              data = await response.json();
-              apiUsed = endpoint;
-              console.log(`Success with endpoint: ${endpoint}`, data);
-              break;
-            } else {
-              console.log(`Endpoint ${endpoint} failed with status: ${response.status}`);
+        const response = await axios.get(`https://api.techsterker.com/api/liveclassesvideos/${userId}`);
+        
+        console.log('Live class videos response:', response.data);
+        
+        if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          const videos = response.data.data;
+          setLiveClassVideos(videos);
+          
+          // Extract unique courses from videos
+          const uniqueCourses = [];
+          const courseMap = new Map();
+          
+          videos.forEach(video => {
+            if (video.course && video.course._id && !courseMap.has(video.course._id)) {
+              courseMap.set(video.course._id, {
+                id: video.course._id,
+                name: video.course.name,
+                enrollmentId: video.enrollmentId
+              });
             }
-          } catch (err) {
-            console.log(`Endpoint ${endpoint} error:`, err.message);
-          }
-        }
-
-        // If no API worked, try local fallback data
-        if (!data) {
-          console.log('All APIs failed, using fallback data');
-          // Use fallback mock data for demonstration
-          data = {
-            success: true,
-            data: [
-              {
-                _id: 'course1',
-                enrolledId: {
-                  batchName: 'Web Development Bootcamp',
-                  _id: 'course1_id'
-                },
-                mentorName: 'John Doe',
-                modules: [
-                  {
-                    _id: 'module1',
-                    subjectName: 'HTML & CSS',
-                    topics: [
-                      {
-                        lessons: [
-                          {
-                            _id: 'lesson1',
-                            name: 'Introduction to HTML',
-                            date: '2024-01-15',
-                            duration: '45 min',
-                            videoId: 'dQw4w9WgXcQ',
-                            resources: [
-                              {
-                                _id: 'res1',
-                                name: 'HTML Cheatsheet.pdf',
-                                file: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-                              }
-                            ]
-                          },
-                          {
-                            _id: 'lesson2',
-                            name: 'CSS Fundamentals',
-                            date: '2024-01-16',
-                            duration: '50 min',
-                            videoId: 'dQw4w9WgXcQ'
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    _id: 'module2',
-                    subjectName: 'JavaScript',
-                    topics: [
-                      {
-                        lessons: [
-                          {
-                            _id: 'lesson3',
-                            name: 'JavaScript Basics',
-                            date: '2024-01-17',
-                            duration: '60 min',
-                            videoId: 'dQw4w9WgXcQ',
-                            resources: [
-                              {
-                                _id: 'res2',
-                                name: 'JS Exercises.zip',
-                                file: 'https://example.com/file.zip'
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          };
-          apiUsed = 'fallback';
-        }
-
-        // Process the data
-        if (data && data.success && data.data && Array.isArray(data.data)) {
-          const transformedCourses = data.data.map(course => {
-            // Check if required fields exist
-            if (!course.enrolledId || !course.modules) {
-              console.warn('Invalid course data:', course);
-              return null;
-            }
-            
-            return {
-              id: course._id,
-              name: course.enrolledId.batchName || 'Unnamed Course',
-              instructor: course.mentorName || 'Unknown Instructor',
-              progress: 0,
-              courseId: course.enrolledId._id,
-              modules: course.modules.map(module => {
-                if (!module.topics) {
-                  console.warn('Module without topics:', module);
-                  return {
-                    id: module._id,
-                    name: module.subjectName || 'Unnamed Module',
-                    icon: <FiCode className="textcolor" />,
-                    lessons: []
-                  };
-                }
-                
-                return {
-                  id: module._id,
-                  name: module.subjectName || 'Unnamed Module',
-                  icon: <FiCode className="textcolor" />,
-                  lessons: module.topics.flatMap(topic => {
-                    if (!topic.lessons || !Array.isArray(topic.lessons)) {
-                      return [];
-                    }
-                    
-                    return topic.lessons.map(lesson => ({
-                      id: lesson._id,
-                      name: lesson.name || 'Unnamed Lesson',
-                      date: lesson.date ? new Date(lesson.date).toISOString().split('T')[0] : 'No date',
-                      duration: lesson.duration || '40 min',
-                      videoId: lesson.videoId,
-                      completed: false,
-                      resources: lesson.resources ? lesson.resources.map(resource => ({
-                        id: resource._id,
-                        name: resource.name || 'Unnamed Resource',
-                        type: resource.file ? resource.file.split('.').pop() : 'unknown',
-                        url: resource.file || '#',
-                        icon: <FiFileText className="textcolor" />,
-                        isPdf: resource.file ? (resource.file.includes('.pdf') || resource.name.toLowerCase().includes('pdf')) : false
-                      })) : []
-                    }));
-                  })
-                };
-              })
-            };
-          }).filter(Boolean); // Remove null courses
-
-          console.log('Transformed courses:', transformedCourses);
-          console.log('API used:', apiUsed);
-
-          setCoursesData(transformedCourses);
-          if (transformedCourses.length > 0) {
-            setSelectedCourse(transformedCourses[0].id);
-            // Fetch quizzes for the first course
-            fetchQuizzes(transformedCourses[0].courseId);
+          });
+          
+          const courses = Array.from(courseMap.values());
+          setAvailableCourses(courses);
+          
+          // Set first course as selected if available
+          if (courses.length > 0) {
+            setSelectedCourse(courses[0].id);
           }
           
-          // Show info if using fallback
-          if (apiUsed === 'fallback') {
-            Swal.fire({
-              title: 'Demo Mode',
-              text: 'Using demo data. Real API is not available.',
-              icon: 'info',
-              timer: 3000
-            });
-          }
+          // Transform videos into modules structure
+          const transformedData = transformVideosToModules(videos);
+          setCoursesData(transformedData);
+          
         } else {
-          setError('Failed to fetch course data or no data available');
-          setCoursesData([]);
+          // If no videos found, use fallback data
+          console.log('No videos found, using fallback data');
         }
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Error fetching data: ' + err.message);
-        setCoursesData([]);
+        console.error('Error fetching live class videos:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-    // Fetch live classes for the user
+    fetchLiveClassVideos();
     fetchLiveClasses();
+    fetchQuizzes();
   }, [userId]);
+
+  // Transform videos into modules structure
+  const transformVideosToModules = (videos) => {
+    const courseMap = new Map();
+    
+    videos.forEach(video => {
+      if (!video.course) return;
+      
+      const courseId = video.course._id;
+      const courseName = video.course.name;
+      const enrollmentId = video.enrollmentId;
+      const mentorName = video.mentor?.name || 'Unknown Instructor';
+      
+      if (!courseMap.has(courseId)) {
+        courseMap.set(courseId, {
+          id: courseId,
+          name: courseName,
+          instructor: mentorName,
+          progress: 0,
+          courseId: enrollmentId,
+          modules: []
+        });
+      }
+      
+      const course = courseMap.get(courseId);
+      
+      // Group by subject/module
+      const subjectName = video.liveClass?.subjectName || 'General';
+      let module = course.modules.find(m => m.name === subjectName);
+      
+      if (!module) {
+        module = {
+          id: `module-${Date.now()}-${Math.random()}`,
+          name: subjectName,
+          icon: <FiCode className="textcolor" />,
+          lessons: []
+        };
+        course.modules.push(module);
+      }
+      
+      // Add video as lesson
+      module.lessons.push({
+        id: video._id,
+        name: video.title || 'Untitled Video',
+        date: video.createdAt ? new Date(video.createdAt).toISOString().split('T')[0] : 'No date',
+        duration: '45 min', // Default duration since not provided in API
+        videoUrl: video.videoUrl,
+        videoFileName: video.videoFileName,
+        description: video.description,
+        completed: false,
+        liveClass: video.liveClass,
+        mentor: video.mentor,
+        course: video.course,
+        views: video.views || 0
+      });
+    });
+    
+    return Array.from(courseMap.values());
+  };
+
+  // Mock data fallback
+  const useMockData = () => {
+    console.log('Using fallback mock data');
+    const mockVideos = [
+      {
+        _id: 'mock1',
+        title: 'Introduction to HTML',
+        description: 'Learn HTML basics',
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        createdAt: '2024-01-15T10:00:00Z',
+        course: { _id: 'course1', name: 'Web Development' },
+        mentor: { name: 'John Doe' },
+        liveClass: { subjectName: 'HTML & CSS', className: 'Web Dev Class' }
+      },
+      {
+        _id: 'mock2',
+        title: 'CSS Fundamentals',
+        description: 'Master CSS styling',
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        createdAt: '2024-01-16T10:00:00Z',
+        course: { _id: 'course1', name: 'Web Development' },
+        mentor: { name: 'John Doe' },
+        liveClass: { subjectName: 'HTML & CSS', className: 'Web Dev Class' }
+      },
+      {
+        _id: 'mock3',
+        title: 'JavaScript Basics',
+        description: 'Introduction to JavaScript',
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        createdAt: '2024-01-17T10:00:00Z',
+        course: { _id: 'course2', name: 'JavaScript Mastery' },
+        mentor: { name: 'Jane Smith' },
+        liveClass: { subjectName: 'JavaScript', className: 'JS Class' }
+      }
+    ];
+    
+    setLiveClassVideos(mockVideos);
+    
+    const uniqueCourses = [];
+    const courseMap = new Map();
+    mockVideos.forEach(video => {
+      if (video.course && video.course._id && !courseMap.has(video.course._id)) {
+        courseMap.set(video.course._id, {
+          id: video.course._id,
+          name: video.course.name
+        });
+      }
+    });
+    setAvailableCourses(Array.from(courseMap.values()));
+    
+    const transformed = transformVideosToModules(mockVideos);
+    setCoursesData(transformed);
+    
+    if (transformed.length > 0) {
+      setSelectedCourse(transformed[0].id);
+    }
+    
+    Swal.fire({
+      title: 'Demo Mode',
+      text: 'Using demo data. Real API is not available.',
+      icon: 'info',
+      timer: 3000
+    });
+  };
 
   // Fetch quizzes for the selected course - WITH FALLBACK
   const fetchQuizzes = async (courseId) => {
-    if (!userId || !courseId) return;
+    if (!userId) return;
     
     setQuizLoading(true);
     try {
@@ -401,10 +384,12 @@ const CourseModuleInterface = () => {
   // Handle course change
   const handleCourseChange = (courseId) => {
     setSelectedCourse(courseId);
-    const course = coursesData.find(c => c.id === courseId);
-    if (course) {
-      fetchQuizzes(course.courseId);
-    }
+    // Filter videos for selected course
+    const filteredVideos = liveClassVideos.filter(v => v.course?._id === courseId);
+    const transformedData = transformVideosToModules(filteredVideos);
+    setCoursesData(transformedData);
+    setSelectedClass(null); // Reset selected class when course changes
+    fetchQuizzes(courseId);
   };
 
   const selectedCourseData = coursesData.find(c => c.id === selectedCourse);
@@ -428,6 +413,7 @@ const CourseModuleInterface = () => {
 
   const handleClassSelect = (classItem) => {
     setSelectedClass(classItem);
+    setSelectedVideo(classItem);
     setActiveSection('recorded');
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
@@ -435,6 +421,9 @@ const CourseModuleInterface = () => {
   const handleDownload = async (url, filename = "document.pdf") => {
     try {
       setDownloading(true);
+      
+      // Construct full URL if it's a relative path
+      const fullUrl = url.startsWith('http') ? url : `https://api.techsterker.com${url}`;
       
       // If URL is a Cloudinary URL, we need to handle it differently
       if (url.includes('cloudinary.com')) {
@@ -450,7 +439,7 @@ const CourseModuleInterface = () => {
         Swal.fire("Success", "File download started!", "success");
       } else {
         // For other URLs, use axios to download
-        const response = await axios.get(url, { responseType: "blob" });
+        const response = await axios.get(fullUrl, { responseType: "blob" });
         const contentType = response.headers["content-type"] || "application/octet-stream";
         const contentDisposition = response.headers["content-disposition"];
         if (contentDisposition && contentDisposition.includes("filename=")) {
@@ -885,6 +874,21 @@ const CourseModuleInterface = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const getVideoUrl = (video) => {
+    if (!video.videoUrl) return null;
+    
+    // Check if it's a YouTube URL or relative path
+    if (video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be')) {
+      const videoId = video.videoUrl.split('v=')[1] || video.videoUrl.split('/').pop();
+      return `https://www.youtube.com/embed/${videoId}`;
+    } else if (video.videoUrl.startsWith('http')) {
+      return video.videoUrl;
+    } else {
+      // It's a relative path from the API
+      return `https://api.techsterker.com${video.videoUrl}`;
+    }
+  };
+
   // Study Materials Functions
   const getFileIcon = (fileName) => {
     const ext = fileName.split('.').pop().toLowerCase();
@@ -969,8 +973,8 @@ const CourseModuleInterface = () => {
           <div className="mx-auto h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <FiBook className="h-8 w-8 text-gray-600" />
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">No Courses Available</h2>
-          <p className="text-gray-600">You are not enrolled in any courses yet.</p>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">No Videos Available</h2>
+          <p className="text-gray-600">No live class videos found for your account.</p>
         </div>
       </div>
     );
@@ -1217,14 +1221,14 @@ const CourseModuleInterface = () => {
                           
                           <div className="text-center">
                             <div className="text-4xl font-bold text-green-600 mb-2">
-                              {quizResult.summary?.correct}/${quizResult.summary?.totalQuestions}
+                              {quizResult.summary?.correct}/{quizResult.summary?.totalQuestions}
                             </div>
                             <div className="text-gray-600">Correct Answers</div>
                           </div>
                           
                           <div className="text-center">
                             <div className="text-4xl font-bold text-purple-600 mb-2">
-                              {quizResult.summary?.totalScore}/${quizResult.summary?.totalPossiblePoints}
+                              {quizResult.summary?.totalScore}/{quizResult.summary?.totalPossiblePoints}
                             </div>
                             <div className="text-gray-600">Points Earned</div>
                           </div>
@@ -1492,17 +1496,19 @@ const CourseModuleInterface = () => {
               </div>
 
               {/* Courses Dropdown */}
-              <div className="mt-3">
-                <select
-                  className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                  value={selectedCourse || ''}
-                  onChange={(e) => handleCourseChange(e.target.value)}
-                >
-                  {coursesData.map(course => (
-                    <option key={course.id} value={course.id}>{course.name}</option>
-                  ))}
-                </select>
-              </div>
+              {availableCourses.length > 0 && (
+                <div className="mt-3">
+                  <select
+                    className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                    value={selectedCourse || ''}
+                    onChange={(e) => handleCourseChange(e.target.value)}
+                  >
+                    {availableCourses.map(course => (
+                      <option key={course.id} value={course.id}>{course.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Mobile Search */}
               <div className="mt-3 lg:hidden flex items-center bg-white rounded-lg px-3 py-2 border">
@@ -1555,10 +1561,16 @@ const CourseModuleInterface = () => {
                                 <FiClock className="h-3 w-3 mr-1 text-indigo-600" />
                                 <span>{classItem.duration}</span>
                               </div>
-                              {classItem.resources && classItem.resources.length > 0 && (
-                                <div className="flex items-center mt-1 text-xs text-blue-600">
-                                  <FiFileText className="h-3 w-3 mr-1" />
-                                  <span>{classItem.resources.length} resource(s)</span>
+                              {classItem.mentor && (
+                                <div className="flex items-center mt-1 text-xs text-gray-500">
+                                  <FiUser className="h-3 w-3 mr-1 text-indigo-600" />
+                                  <span>{classItem.mentor.name}</span>
+                                </div>
+                              )}
+                              {classItem.views > 0 && (
+                                <div className="flex items-center mt-1 text-xs text-gray-500">
+                                  <FiEye className="h-3 w-3 mr-1 text-indigo-600" />
+                                  <span>{classItem.views} views</span>
                                 </div>
                               )}
                             </div>
@@ -1597,7 +1609,6 @@ const CourseModuleInterface = () => {
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                   
                   {section.icon}
                   <span>{section.label}</span>
                 </button>
@@ -1616,6 +1627,9 @@ const CourseModuleInterface = () => {
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                         <div className="flex-1">
                           <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedClass.name}</h2>
+                          {selectedClass.description && (
+                            <p className="text-gray-600 mb-3">{selectedClass.description}</p>
+                          )}
                           <div className="flex items-center text-sm text-gray-600 flex-wrap gap-4">
                             <div className="flex items-center">
                               <FiCalendar className="h-4 w-4 mr-2 text-indigo-600" />
@@ -1625,29 +1639,108 @@ const CourseModuleInterface = () => {
                               <FiClock className="h-4 w-4 mr-2 text-indigo-600" />
                               <span>{selectedClass.duration}</span>
                             </div>
+                            {selectedClass.mentor && (
+                              <div className="flex items-center">
+                                <FiUser className="h-4 w-4 mr-2 text-indigo-600" />
+                                <span>{selectedClass.mentor.name}</span>
+                              </div>
+                            )}
+                            {selectedClass.liveClass && (
+                              <div className="flex items-center">
+                                <FiBook className="h-4 w-4 mr-2 text-indigo-600" />
+                                <span>{selectedClass.liveClass.className}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
+                        
+                        {/* Download button for video */}
+                        {/* {selectedClass.videoUrl && (
+                          <button
+                            onClick={() => handleDownload(selectedClass.videoUrl, selectedClass.videoFileName || 'video.mp4')}
+                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                            disabled={downloading}
+                          >
+                            {downloading ? (
+                              <FiLoader className="mr-2 animate-spin" />
+                            ) : (
+                              <FiDownload className="mr-2" />
+                            )}
+                            Download Video
+                          </button>
+                        )} */}
                       </div>
                     </div>
 
                     {/* Video Player */}
                     <div className="p-6">
-                      <div className="aspect-w-16 aspect-h-9 bg-black rounded-xl overflow-hidden shadow-lg mb-6">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${selectedClass.videoId}?rel=0&modestbranding=1&controls=1&showinfo=0&iv_load_policy=3&fs=1&disablekb=1`}
-                          title={selectedClass.name}
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="w-full h-64 sm:h-72 md:h-80 lg:h-96"
-                        ></iframe>
-                      </div>
+                      {selectedClass.videoUrl ? (
+                        <div className="aspect-w-16 aspect-h-9 bg-black rounded-xl overflow-hidden shadow-lg mb-6">
+                          {selectedClass.videoUrl.includes('youtube.com') || selectedClass.videoUrl.includes('youtu.be') ? (
+                            <iframe
+                              src={getVideoUrl(selectedClass)}
+                              title={selectedClass.name}
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              className="w-full h-64 sm:h-72 md:h-80 lg:h-96"
+                            ></iframe>
+                          ) : (
+                            <video
+                              src={getVideoUrl(selectedClass)}
+                              controls
+                              controlsList="nodownload"
+                              className="w-full h-64 sm:h-72 md:h-80 lg:h-96"
+                              onContextMenu={(e) => e.preventDefault()}
+                              onError={() => setVideoError('Failed to load video')}
+                            >
+                              Your browser does not support the video tag.
+                            </video>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="aspect-w-16 aspect-h-9 bg-gray-200 rounded-xl overflow-hidden shadow-lg mb-6 flex items-center justify-center">
+                          <FiVideoOff className="h-12 w-12 text-gray-400" />
+                          <p className="text-gray-500 ml-2">Video not available</p>
+                        </div>
+                      )}
                       
-                      <div className="bg-gray-50 rounded-lg p-6">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3">About this class</h3>
-                        <p className="text-gray-600 leading-relaxed">
-                          Learn and practice concepts with real-world examples. This session covers important topics that will help you master the subject. Take notes and explore additional resources provided below.
-                        </p>
+                      {selectedClass.description && (
+                        <div className="bg-gray-50 rounded-lg p-6">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-3">About this class</h3>
+                          <p className="text-gray-600 leading-relaxed">
+                            {selectedClass.description}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Video details */}
+                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedClass.liveClass && (
+                          <div className="bg-blue-50 rounded-lg p-4">
+                            <h4 className="font-semibold text-blue-800 mb-2">Live Class Details</h4>
+                            <p className="text-sm text-blue-700">Class: {selectedClass.liveClass.className}</p>
+                            <p className="text-sm text-blue-700">Subject: {selectedClass.liveClass.subjectName}</p>
+                            <p className="text-sm text-blue-700">Timing: {selectedClass.liveClass.timing}</p>
+                            {selectedClass.liveClass.link && (
+                              <a 
+                                href={selectedClass.liveClass.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:underline mt-2 inline-block"
+                              >
+                                Join Live Class <FiExternalLink className="inline ml-1" />
+                              </a>
+                            )}
+                          </div>
+                        )}
+                        
+                        {selectedClass.course && (
+                          <div className="bg-purple-50 rounded-lg p-4">
+                            <h4 className="font-semibold text-purple-800 mb-2">Course Information</h4>
+                            <p className="text-sm text-purple-700">Course: {selectedClass.course.name}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
