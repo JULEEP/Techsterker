@@ -161,8 +161,8 @@ const CourseModuleInterface = () => {
       module.lessons.push({
         id: video._id,
         name: video.title || 'Untitled Video',
-        date: video.createdAt ? new Date(video.createdAt).toISOString().split('T')[0] : 'No date',
-        duration: '45 min', // Default duration since not provided in API
+        date: video.liveClass ? new Date(video.liveClass.date).toISOString().split('T')[0] : 'No date',
+        // duration: '45 min', // Default duration since not provided in API
         videoUrl: video.videoUrl,
         videoFileName: video.videoFileName,
         description: video.description,
@@ -1558,8 +1558,8 @@ const CourseModuleInterface = () => {
                               <div className="flex items-center mt-1 text-xs text-gray-500">
                                 <FiCalendar className="h-3 w-3 mr-1 text-indigo-600" />
                                 <span className="mr-3">{classItem.date}</span>
-                                <FiClock className="h-3 w-3 mr-1 text-indigo-600" />
-                                <span>{classItem.duration}</span>
+                                {/* <FiClock className="h-3 w-3 mr-1 text-indigo-600" />
+                                <span>{classItem.duration}</span> */}
                               </div>
                               {classItem.mentor && (
                                 <div className="flex items-center mt-1 text-xs text-gray-500">
@@ -1635,10 +1635,10 @@ const CourseModuleInterface = () => {
                               <FiCalendar className="h-4 w-4 mr-2 text-indigo-600" />
                               <span>{selectedClass.date}</span>
                             </div>
-                            <div className="flex items-center">
+                            {/* <div className="flex items-center">
                               <FiClock className="h-4 w-4 mr-2 text-indigo-600" />
                               <span>{selectedClass.duration}</span>
-                            </div>
+                            </div> */}
                             {selectedClass.mentor && (
                               <div className="flex items-center">
                                 <FiUser className="h-4 w-4 mr-2 text-indigo-600" />
